@@ -6,7 +6,6 @@
 -- Tiempo de generación: 23-06-2026 a las 18:12:42
 -- Versión del servidor: 8.4.7
 -- Versión de PHP: 8.3.28
-
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
@@ -21,7 +20,7 @@ SET time_zone = "+00:00";
 -- Base de datos: `triage`
 --
 
--- --------------------------------------------------------
+-------------------------------------------------
 
 --
 -- Estructura de tabla para la tabla `contactoemergencia`

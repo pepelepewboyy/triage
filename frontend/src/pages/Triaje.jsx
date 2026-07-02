@@ -454,25 +454,7 @@ export default function Triage() {
             </div>
 
             <div className="card">
-              <h3>Nivel de Triage</h3>
-
-              <select
-                value={triage.nivel_triage}
-                onChange={(e) =>
-                  setTriage({
-                    ...triage,
-                    nivel_triage: e.target.value,
-                  })
-                }
-              >
-                <option value="">Seleccione nivel</option>
-                <option value="rojo">Rojo - Emergencia</option>
-                <option value="naranja">Naranja - Muy urgente</option>
-                <option value="amarillo">Amarillo - Urgente</option>
-                <option value="verde">Verde - Poco urgente</option>
-                <option value="azul">Azul - No urgente</option>
-              </select>
-              <h3>Metodo de Evaluacion</h3>
+             <h3>Metodo de Evaluacion</h3>
 
               <select
                 value={triage.metodo_evaluacion}
@@ -491,6 +473,25 @@ export default function Triage() {
                 <option value="Triage IMSS">Triage IMSS</option>
                 <option value="Triage ISSSTE">Triage ISSSTE</option>
               </select>
+              <h3>Nivel de Triage</h3>
+
+              <select
+                value={triage.nivel_triage}
+                onChange={(e) =>
+                  setTriage({
+                    ...triage,
+                    nivel_triage: e.target.value,
+                  })
+                }
+              >
+                <option value="">Seleccione nivel</option>
+                <option value="rojo">Rojo - Emergencia</option>
+                <option value="naranja">Naranja - Muy urgente</option>
+                <option value="amarillo">Amarillo - Urgente</option>
+                <option value="verde">Verde - Poco urgente</option>
+                <option value="azul">Azul - No urgente</option>
+              </select>
+             
             </div>
 
             <div className="card botones">
