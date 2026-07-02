@@ -278,7 +278,7 @@ export default function Configuraciones() {
           <div className="modal">
             <div className="modal-content">
               <div className="modal-header">
-                <h2>Detalle del Médico</h2>
+                <h2>Detalles del médico</h2>
 
                 <div
                   className="btnClose"
@@ -329,8 +329,8 @@ export default function Configuraciones() {
                       })
                     }
                   >
-                    <option>Medico(a)</option>
-                    <option>Paramedico(a)</option>
+                    <option>Médico(a)</option>
+                    <option>Paramédico(a)</option>
                     <option>Enfermero(a)</option>
                     <option>Admin</option>
                   </select>
@@ -365,7 +365,7 @@ export default function Configuraciones() {
                 </div>
 
                 <div className="full">
-                  <button onClick={guardarEdicion}>Guardar Cambios</button>
+                  <button onClick={guardarEdicion}>Guardar cambios</button>
                 </div>
               </div>
             </div>
@@ -378,7 +378,7 @@ export default function Configuraciones() {
           <div className="modal">
             <div className="modal-content">
               <div className="modal-header">
-                <h2>Agregar Médico</h2>
+                <h2>Agregar médico</h2>
 
                 <div
                   className="btnClose"
@@ -429,8 +429,8 @@ export default function Configuraciones() {
                       })
                     }
                   >
-                    <option>Medico(a)</option>
-                    <option>Paramedico(a)</option>
+                    <option>Médico(a)</option>
+                    <option>Paramédico(a)</option>
                     <option>Enfermero(a)</option>
                     <option>Admin</option>
                   </select>
@@ -465,7 +465,7 @@ export default function Configuraciones() {
                 </div>
 
                 <div className="full">
-                  <button onClick={agregarUsuario}>Agregar Usuario</button>
+                  <button onClick={agregarUsuario}>Agregar usuario</button>
                 </div>
               </div>
             </div>

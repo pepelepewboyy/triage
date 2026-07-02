@@ -121,8 +121,8 @@ function Pacientes() {
       showDenyButton: true,
       showCancelButton: true,
 
-      confirmButtonText: "Solo Triage",
-      denyButtonText: "Paciente Completo",
+      confirmButtonText: "Solo triage",
+      denyButtonText: "Paciente completo",
       cancelButtonText: "Cancelar",
 
       confirmButtonColor: "#f39c12",
@@ -133,7 +133,7 @@ function Pacientes() {
       if (result.isConfirmed) {
         await api.put(`/triage/${idTriage}/eliminar`);
 
-        Swal.fire("Eliminado", "El triage fue eliminado", "success");
+        Swal.fire("Eliminado", "El triage fue eliminado", "success");//porque esta en ingles succes?
 
         cargarPacientes();
       }
@@ -153,7 +153,7 @@ function Pacientes() {
 
         await api.put(`/pacientes/${idPaciente}/eliminar`);
 
-        Swal.fire("Eliminado", "Paciente eliminado", "success");
+        Swal.fire("Eliminado", "Paciente eliminado", "success");//igual aqui
 
         cargarPacientes();
       }
@@ -352,8 +352,8 @@ function Pacientes() {
           <div className="modal-content">
             <div className="modal-header">
               <h2>
-                <i className="fa-solid fa-notes-medical"></i> Detalle del
-                Paciente
+                <i className="fa-solid fa-notes-medical"></i> Detalles del
+                paciente
               </h2>
 
               <div className="btnClose" onClick={() => setMostrarModal(false)}>
@@ -362,10 +362,10 @@ function Pacientes() {
             </div>
 
             <form className="modal-form">
-              <div className="section-title">Información Personal</div>
+              <div className="section-title">Información personal</div>
 
               <div className="full">
-                <label>Nombre Completo</label>
+                <label>Nombre completo</label>
 
                 <input
                   type="text"
@@ -401,7 +401,7 @@ function Pacientes() {
               </div>
 
               <div>
-                <label>Número de Seguro Social</label>
+                <label>Número de seguro social</label>
 
                 <input
                   type="text"
@@ -412,7 +412,7 @@ function Pacientes() {
               </div>
 
               <div>
-                <label>Tipo de Sangre</label>
+                <label>Tipo de sangre</label>
 
                 <select
                   name="tipo_sangre"
@@ -444,10 +444,10 @@ function Pacientes() {
                 </select>
               </div>
 
-              <div className="section-title">Signos Vitales y Triage</div>
+              <div className="section-title">Signos vitales y triage</div>
 
               <div>
-                <label>Nivel de Urgencia</label>
+                <label>Nivel de urgencia</label>
 
                 <select
                   name="nivel_evaluacion"
@@ -474,7 +474,7 @@ function Pacientes() {
               </div>
 
               <div>
-                <label>Presión Arterial</label>
+                <label>Presión arterial</label>
 
                 <input
                   type="text"
@@ -485,7 +485,7 @@ function Pacientes() {
               </div>
 
               <div>
-                <label>Frecuencia Cardíaca</label>
+                <label>Frecuencia cardíaca</label>
 
                 <input
                   type="text"
@@ -507,7 +507,7 @@ function Pacientes() {
               </div>
 
               <div className="full">
-                <label>Síntomas / Historia Clínica</label>
+                <label>Síntomas / Historia clínica</label>
 
                 <textarea
                   name="sintomas"
@@ -518,7 +518,7 @@ function Pacientes() {
 
               <div className="full btn_guardar">
                 <button type="button" onClick={guardarCambios}>
-                  Guardar Cambios
+                  Guardar cambios
                 </button>
               </div>
             </form>

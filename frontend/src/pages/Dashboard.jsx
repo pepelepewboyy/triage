@@ -118,7 +118,7 @@ function Dashboard() {
                 <th>ID</th>
                 <th>Nombre</th>
                 <th>Edad</th>
-                <th>Sintomas</th>
+                <th>Síntomas</th>
                 <th>Comentarios</th>
                 <th>Acción</th>
               </tr>

@@ -380,7 +380,7 @@ export default function Triage() {
           {/* TRIAGE */}
           <form id="formTriage">
             <div className="card">
-              <h3>Frecuencia Cardiaca</h3>
+              <h3>Frecuencia cardiaca</h3>
               <input
                 type="text"
                 value={triage.frecuenciaCardiaca}
@@ -395,7 +395,7 @@ export default function Triage() {
             </div>
 
             <div className="card">
-              <h3>Presion Arterial</h3>
+              <h3>Presión arterial</h3>
               <input
                 type="text"
                 value={triage.presion}
@@ -425,7 +425,7 @@ export default function Triage() {
             </div>
 
             <div className="card sintomas">
-              <h3>Sintomas e Historia clinica</h3>
+              <h3>Sintomas e historia clínica</h3>
               <textarea
                 rows="8"
                 value={triage.sintomas}
@@ -454,7 +454,7 @@ export default function Triage() {
             </div>
 
             <div className="card">
-             <h3>Metodo de Evaluacion</h3>
+             <h3>Método de evaluación</h3>
 
               <select
                 value={triage.metodo_evaluacion}
@@ -473,7 +473,7 @@ export default function Triage() {
                 <option value="Triage IMSS">Triage IMSS</option>
                 <option value="Triage ISSSTE">Triage ISSSTE</option>
               </select>
-              <h3>Nivel de Triage</h3>
+              <h3>Nivel de triage</h3>
 
               <select
                 value={triage.nivel_triage}
@@ -496,10 +496,10 @@ export default function Triage() {
 
             <div className="card botones">
               <button type="button" className="btn" onClick={insertarTriage}>
-                Guardar Evaluacion
+                Guardar evaluación
               </button>
               <button type="button" className="btn" onClick={insertarTriage}>
-                IA Evaluacion
+                IA Evaluación
               </button>
             </div>
 
