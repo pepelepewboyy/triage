@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Hash;
 use App\Models\Persona;
 use Illuminate\Http\Request;
 
@@ -18,6 +19,7 @@ class AuthController extends Controller
             $persona = Persona::where('usuario', $request->usuario)
                 ->where('estado', 'Activo')
                 ->first();
+            $persona-> password = Hash::make($request->password);
 
             if (!$persona) {
                 return response()->json([

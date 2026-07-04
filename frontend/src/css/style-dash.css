@@ -18,6 +18,7 @@ body {
     width: 100%;
     min-height: 100vh;
 }
+
 .dashboard-container {
     display: flex;
     width: 100%;
@@ -82,7 +83,7 @@ body {
 .main {
     flex: 1;
     margin-left: 220px;
-    width: calc(100vw-220px);
+    width: calc(100vw - 220px);
 }
 
 .topbar {
@@ -204,13 +205,14 @@ td {
     padding: 10px;
     border-bottom: 1px solid #ddd;
 }
+
 .acciones {
-  white-space: nowrap;
+    white-space: nowrap;
 }
 
 .acciones-contenedor {
-  display: flex;
-  gap: 10px;
+    display: flex;
+    gap: 10px;
 }
 
 .rojo {
@@ -234,46 +236,35 @@ td {
 .chart h3 {
     margin-bottom: 20px;
 }
+
 /* =========================================
    MODAL OVERLAY
 ========================================= */
-
 .modal-overlay {
     position: fixed;
     inset: 0;
     z-index: 9999;
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     padding: 20px;
-
     background: rgba(0, 0, 0, 0.4);
 }
 
 /* =========================================
    MODAL
 ========================================= */
-
 .modal-content {
     position: relative;
-
     width: 100%;
     max-width: 700px;
     max-height: 90vh;
-
     overflow-y: auto;
-
     padding: 30px;
-
     background: #ffffff;
-
     border-top: 8px solid #2d60ff;
     border-radius: 20px;
-
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-
     animation: modalFadeIn 0.3s ease-out;
 }
 
@@ -282,7 +273,6 @@ td {
         opacity: 0;
         transform: translateY(-20px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
@@ -292,24 +282,19 @@ td {
 /* =========================================
    HEADER
 ========================================= */
-
 .modal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-
     gap: 12px;
-
     margin-bottom: 20px;
     padding-bottom: 15px;
-
     border-bottom: 1px solid #f1f5f9;
 }
 
 .modal-header h2 {
     color: #2d60ff;
     font-size: 20px;
-
     display: flex;
     align-items: center;
     gap: 10px;
@@ -318,24 +303,16 @@ td {
 /* =========================================
    BOTON CERRAR
 ========================================= */
-
 .btnClose {
     display: flex;
-
     width: 35px;
     height: 35px;
-
     align-items: center;
     justify-content: center;
-
     border-radius: 50%;
-
     background: #f1f5f9;
-
     color: #64748b;
-
     cursor: pointer;
-
     transition: .2s;
 }
 
@@ -347,12 +324,9 @@ td {
 /* =========================================
    FORMULARIO
 ========================================= */
-
 .modal-form {
     display: grid;
-
     grid-template-columns: repeat(2, minmax(0, 1fr));
-
     gap: 15px;
 }
 
@@ -363,37 +337,27 @@ td {
 /* =========================================
    LABELS
 ========================================= */
-
 .modal-form label {
     display: block;
-
     margin-bottom: 5px;
-
     font-size: 12px;
     font-weight: 700;
-
     color: #64748b;
-
     text-transform: uppercase;
 }
 
 /* =========================================
    INPUTS
 ========================================= */
-
 .modal-form input,
 .modal-form select,
 .modal-form textarea {
     width: 100%;
-    
     padding: 10px;
-
     border: 1px solid #e2e8f0;
     border-radius: 8px;
-
     color: #2149c5;
     background: #f8fafc;
-
     font-size: 14px;
 }
 
@@ -412,49 +376,35 @@ td {
 /* =========================================
    TITULOS DE SECCION
 ========================================= */
-
 .section-title {
     grid-column: span 2;
-
     margin-top: 10px;
-
     font-size: 13px;
     font-weight: 800;
-
     color: #cbd5e1;
-
     text-transform: uppercase;
-
     border-bottom: 1px solid #f1f5f9;
 }
 
 /* =========================================
    BOTON GUARDAR
 ========================================= */
-
 .btn_guardar {
     display: flex;
     justify-content: center;
-
     margin-top: 15px;
 }
 
 .btn_guardar button {
     min-width: 220px;
-
     padding: 12px 24px;
-
     border: none;
     border-radius: 10px;
-
     background: #2d60ff;
     color: white;
-
     font-size: 15px;
     font-weight: 600;
-
     cursor: pointer;
-
     transition: .3s;
 }
 
@@ -462,59 +412,47 @@ td {
     background: #2149c5;
 }
 
-
 @media (max-width: 768px) {
-
     .modal-content {
         padding: 24px 18px;
     }
-
 }
 
 @media (max-width: 600px) {
-
     .modal-form {
         grid-template-columns: 1fr;
     }
-
     .modal-form .full,
     .modal-form div,
     .section-title {
         grid-column: span 1;
     }
-
     .modal-header {
         align-items: flex-start;
     }
-
     .btn_guardar,
     .btn_guardar button {
         width: 100%;
     }
-
 }
+
 @media screen and (max-width: 1024px) {
     .sidebar {
         width: 200px;
     }
-
     .main {
         width: calc(100% - 200px);
         margin-left: 200px;
         padding: 20px;
     }
-
     .card p {
         font-size: 18px;
     }
-
     table {
         min-width: 580px;
         font-size: 14px;
     }
-
-    th,
-    td {
+    th, td {
         padding: 8px;
     }
 }
@@ -525,41 +463,33 @@ td {
         align-items: center;
         padding-top: 15px;
     }
-
     .logo img {
         width: 40px;
         height: 40px;
     }
-
     .menu a {
         justify-content: center;
         padding: 15px 0;
         font-size: 0;
     }
-
     .menu a i {
         font-size: 20px;
     }
-
     .main {
         width: calc(100% - 72px);
         margin-left: 72px;
         padding: 16px;
     }
-
     .topbar {
         padding: 16px;
     }
-
     .cards {
         grid-template-columns: 1fr;
     }
-
     .card {
         flex-direction: row;
         align-items: center;
     }
-
     .table-container,
     .chart {
         padding: 16px;
@@ -570,18 +500,15 @@ td {
     .main {
         padding: 12px;
     }
-
     .topbar h2,
     .topbar h3 {
         font-size: 18px;
     }
-
     .circulo,
     .view {
         width: 52px;
         height: 52px;
     }
-
     table {
         min-width: 520px;
     }

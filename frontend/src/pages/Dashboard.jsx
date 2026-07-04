@@ -14,12 +14,12 @@ function Dashboard() {
   const cargarPacientes = async () => {
     try {
       const response = await api.get("/dashboard/pacientes-urgentes");
-
       setPacientes(response.data);
     } catch (error) {
       console.error("Error cargando pacientes:", error);
     }
   };
+
   const cerrarSesion = async () => {
     const result = await Swal.fire({
       title: "Cerrar sesión",
@@ -32,7 +32,6 @@ function Dashboard() {
 
     if (result.isConfirmed) {
       localStorage.clear();
-
       navigate("/");
     }
   };
@@ -106,7 +105,9 @@ function Dashboard() {
         <div className="topbar">
           <h3>Dashboard</h3>
 
-          <div className="user">Hola! {usuario.nombre}</div>
+          <div className="user">
+            ¡Hola! {usuario.nombre}
+          </div>
         </div>
 
         <div className="table-container">
