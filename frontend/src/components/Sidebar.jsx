@@ -56,23 +56,24 @@ function Sidebar({ isOpen, onClose }) {
                     </Link>
                   </li>
                 ))}
+
+                {/* Cerrar sesión ahora es parte del menú, justo debajo de Configuraciones */}
+                <li className="sidebar-menu-item">
+
+                  <a href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      cerrarSesion();
+                    }}
+                  >
+                    <span className="sidebar-menu-icon">
+                      <i className="fa-solid fa-right-from-bracket"></i>
+                    </span>
+                    <span className="sidebar-menu-title">Cerrar sesión</span>
+                  </a>
+                </li>
               </ul>
             </nav>
-          </div>
-
-          <div className="sidebar-footer">
-            
-              <a href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                cerrarSesion();
-              }}
-            >
-              <span className="menu-icon">
-                <i className="fa-solid fa-right-from-bracket"></i>
-              </span>
-              <span className="menu-title">Cerrar sesión</span>
-            </a>
           </div>
         </div>
       </aside>

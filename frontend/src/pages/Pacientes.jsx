@@ -2,15 +2,14 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import api from "../services/api";
-import "../css/style-dash.css";
-import logo from "../assets/estrella-vida.png";
 import Sidebar from "../components/Sidebar";
-
+import "../css/style-dash.css";
 
 function Pacientes() {
   const [pacientes, setPacientes] = useState([]);
   const [busqueda, setBusqueda] = useState("");
   const [mostrarModal, setMostrarModal] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const [pacienteEditando, setPacienteEditando] = useState({
     id_paciente: "",
@@ -28,10 +27,10 @@ function Pacientes() {
   });
   const usuario = JSON.parse(localStorage.getItem("usuario"));
   const navigate = useNavigate();
+
   const cargarPacientes = async () => {
     try {
       const response = await api.get("/pacientes");
-
       setPacientes(response.data);
     } catch (error) {
       console.error(error);
@@ -46,24 +45,6 @@ function Pacientes() {
     p.nombre_completo?.toLowerCase().includes(busqueda.toLowerCase()),
   );
 
-  const cerrarSesion = async () => {
-    const result = await Swal.fire({
-      title: "Cerrar sesión",
-      text: "¿Deseas salir del sistema?",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "Sí, salir",
-      cancelButtonText: "Cancelar",
-    });
-
-    if (!result.isConfirmed) return;
-
-    localStorage.removeItem("usuario");
-    localStorage.removeItem("id_persona");
-
-    navigate("/");
-  };
-
   const verPaciente = (id) => {
     localStorage.setItem("idPaciente", id);
     navigate(`/seguimiento/${id}`);
@@ -72,12 +53,8 @@ function Pacientes() {
   const editarPaciente = async (id) => {
     try {
       const response = await api.get(`/pacientes/${id}`);
-
       const paciente = response.data;
-      setPacienteEditando({
-        ...paciente,
-      });
-
+      setPacienteEditando({ ...paciente });
       setMostrarModal(true);
     } catch (error) {
       Swal.fire({
@@ -88,20 +65,15 @@ function Pacientes() {
       console.error(error);
     }
   };
+
   const guardarCambios = async () => {
     try {
-      console.log("ENVIANDO...");
-      console.log(pacienteEditando);
-
       await api.put(
         `/pacientes/${pacienteEditando.id_paciente}`,
         pacienteEditando,
       );
-
       alert("Paciente actualizado");
-
       setMostrarModal(false);
-
       cargarPacientes();
     } catch (error) {
       Swal.fire({
@@ -110,23 +82,20 @@ function Pacientes() {
         text: "Error al guardar cambios",
       });
       console.error(error);
-
       console.log(error.response?.data);
     }
   };
+
   const mostrarEliminar = async (idPaciente, idTriage) => {
     const result = await Swal.fire({
       title: "¿Qué deseas eliminar?",
       text: "Selecciona una opción",
       icon: "warning",
-
       showDenyButton: true,
       showCancelButton: true,
-
       confirmButtonText: "Solo triage",
       denyButtonText: "Paciente completo",
       cancelButtonText: "Cancelar",
-
       confirmButtonColor: "#f39c12",
       denyButtonColor: "#e74c3c",
     });
@@ -134,9 +103,7 @@ function Pacientes() {
     try {
       if (result.isConfirmed) {
         await api.put(`/triage/${idTriage}/eliminar`);
-
-        Swal.fire("Eliminado", "El triage fue eliminado", "success");//porque esta en ingles succes?
-
+        Swal.fire("Eliminado", "El triage fue eliminado", "success");
         cargarPacientes();
       }
 
@@ -154,17 +121,15 @@ function Pacientes() {
         if (!confirmar.isConfirmed) return;
 
         await api.put(`/pacientes/${idPaciente}/eliminar`);
-
-        Swal.fire("Eliminado", "Paciente eliminado", "success");//igual aqui
-
+        Swal.fire("Eliminado", "Paciente eliminado", "success");
         cargarPacientes();
       }
     } catch (error) {
       console.error(error);
-
       Swal.fire("Error", "No fue posible eliminar", "error");
     }
   };
+
   const handleChange = (e) => {
     setPacienteEditando({
       ...pacienteEditando,
@@ -175,52 +140,15 @@ function Pacientes() {
   return (
     <>
       <div className="dashboard-container">
-        {/* SIDEBAR */}
-        <div className="sidebar">
-          <div className="logo">
-            <img src={logo} alt="TrIAge" />
-          </div>
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-          <div className="menu">
-            <Link to="/dashboard">
-              <i className="fa-solid fa-house"></i>
-              Dashboard
-            </Link>
-
-            <Link to="/pacientes" className="active">
-              <i className="fa-solid fa-user"></i>
-              Pacientes
-            </Link>
-
-            <Link to="/triaje">
-              <i className="fa-solid fa-notes-medical"></i>
-              Triaje
-            </Link>
-
-            <Link to="/configuraciones">
-              <i className="fa-solid fa-gear"></i>
-              Configuraciones
-            </Link>
-
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                cerrarSesion();
-              }}
-            >
-              <i className="fa-solid fa-right-from-bracket"></i>
-              Cerrar sesión
-            </a>
-          </div>
-        </div>
-
-        {/* CONTENIDO */}
         <div className="main">
           <div className="topbar">
+            <button className="hamburger" onClick={() => setSidebarOpen(!sidebarOpen)}>
+              <i className="fa-solid fa-bars"></i>
+            </button>
             <h3>Pacientes</h3>
-
-            <div>Hola! {usuario?.nombre}</div>
+            <div className="user">¡Hola! {usuario?.nombre}</div>
           </div>
 
           <div className="table-container" style={{ marginBottom: "20px" }}>
@@ -266,12 +194,7 @@ function Pacientes() {
                 <tbody>
                   {pacientesFiltrados.length === 0 ? (
                     <tr>
-                      <td
-                        colSpan="9"
-                        style={{
-                          textAlign: "center",
-                        }}
-                      >
+                      <td colSpan="9" style={{ textAlign: "center" }}>
                         No hay pacientes
                       </td>
                     </tr>
@@ -279,64 +202,36 @@ function Pacientes() {
                     pacientesFiltrados.map((paciente) => (
                       <tr key={paciente.id_triage}>
                         <td>{paciente.id_triage}</td>
-
                         <td>{paciente.id_paciente}</td>
-
                         <td>{paciente.nombre_completo}</td>
-
                         <td>{paciente.edad}</td>
-
                         <td>{paciente.sexo}</td>
-
                         <td>{paciente.nivel_evaluacion}</td>
-
                         <td>{paciente.sintomas}</td>
-
                         <td>{paciente.habitacion}</td>
-
                         <td className="acciones">
                           <div className="acciones-contenedor">
                             <button
                               className="view"
-                              onClick={() =>
-                                editarPaciente(paciente.id_paciente)
-                              }
+                              onClick={() => editarPaciente(paciente.id_paciente)}
                             >
-                              <i
-                                className="fa-solid fa-pencil"
-                                style={{
-                                  color: "#4116db",
-                                }}
-                              />
+                              <i className="fa-solid fa-pencil" style={{ color: "#4116db" }} />
                             </button>
 
                             <button
                               className="view"
                               onClick={() => verPaciente(paciente.id_paciente)}
                             >
-                              <i
-                                className="fa-solid fa-eye"
-                                style={{
-                                  color: "#0a8076",
-                                }}
-                              />
+                              <i className="fa-solid fa-eye" style={{ color: "#0a8076" }} />
                             </button>
 
                             <button
                               className="view"
                               onClick={() =>
-                                mostrarEliminar(
-                                  paciente.id_paciente,
-                                  paciente.id_triage,
-                                )
+                                mostrarEliminar(paciente.id_paciente, paciente.id_triage)
                               }
                             >
-                              <i
-                                className="fa-solid fa-trash"
-                                style={{
-                                  color: "#db1616",
-                                }}
-                              />
+                              <i className="fa-solid fa-trash" style={{ color: "#db1616" }} />
                             </button>
                           </div>
                         </td>
@@ -349,15 +244,14 @@ function Pacientes() {
           </div>
         </div>
       </div>
+
       {mostrarModal && (
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
               <h2>
-                <i className="fa-solid fa-notes-medical"></i> Detalles del
-                paciente
+                <i className="fa-solid fa-notes-medical"></i> Detalles del paciente
               </h2>
-
               <div className="btnClose" onClick={() => setMostrarModal(false)}>
                 <i className="fa-solid fa-xmark"></i>
               </div>
@@ -368,7 +262,6 @@ function Pacientes() {
 
               <div className="full">
                 <label>Nombre completo</label>
-
                 <input
                   type="text"
                   name="nombre_completo"
@@ -379,7 +272,6 @@ function Pacientes() {
 
               <div>
                 <label>Edad</label>
-
                 <input
                   type="text"
                   name="edad"
@@ -390,21 +282,14 @@ function Pacientes() {
 
               <div>
                 <label>Sexo</label>
-
-                <select
-                  name="sexo"
-                  value={pacienteEditando.sexo || ""}
-                  onChange={handleChange}
-                >
+                <select name="sexo" value={pacienteEditando.sexo || ""} onChange={handleChange}>
                   <option value="Masculino">Masculino</option>
-
                   <option value="Femenino">Femenino</option>
                 </select>
               </div>
 
               <div>
                 <label>Número de seguro social</label>
-
                 <input
                   type="text"
                   name="nss"
@@ -415,7 +300,6 @@ function Pacientes() {
 
               <div>
                 <label>Tipo de sangre</label>
-
                 <select
                   name="tipo_sangre"
                   value={pacienteEditando.tipo_sangre || ""}
@@ -435,7 +319,6 @@ function Pacientes() {
 
               <div>
                 <label>¿Es donador?</label>
-
                 <select
                   name="donador_organos"
                   value={pacienteEditando.donador_organos || ""}
@@ -450,7 +333,6 @@ function Pacientes() {
 
               <div>
                 <label>Nivel de urgencia</label>
-
                 <select
                   name="nivel_evaluacion"
                   value={pacienteEditando.nivel_evaluacion || ""}
@@ -466,7 +348,6 @@ function Pacientes() {
 
               <div>
                 <label>Temperatura</label>
-
                 <input
                   type="text"
                   name="temperatura"
@@ -477,7 +358,6 @@ function Pacientes() {
 
               <div>
                 <label>Presión arterial</label>
-
                 <input
                   type="text"
                   name="presion_arterial"
@@ -488,7 +368,6 @@ function Pacientes() {
 
               <div>
                 <label>Frecuencia cardíaca</label>
-
                 <input
                   type="text"
                   name="frecuencia_cardiaca"
@@ -499,7 +378,6 @@ function Pacientes() {
 
               <div>
                 <label>Habitación</label>
-
                 <input
                   type="text"
                   name="habitacion"
@@ -510,7 +388,6 @@ function Pacientes() {
 
               <div className="full">
                 <label>Síntomas / Historia clínica</label>
-
                 <textarea
                   name="sintomas"
                   value={pacienteEditando.sintomas || ""}
