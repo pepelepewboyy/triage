@@ -158,7 +158,7 @@ export default function Configuraciones() {
             <button className="hamburger" onClick={() => setSidebarOpen(!sidebarOpen)}>
               <i className="fa-solid fa-bars"></i>
             </button>
-            <h3>Configuraciones</h3>
+            <h3>Configuración</h3>
             <div className="user">Administración de usuarios</div>
           </header>
 
