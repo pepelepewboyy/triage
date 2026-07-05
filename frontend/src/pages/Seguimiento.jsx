@@ -5,6 +5,8 @@ import api from "../services/api";
 import logo from "../assets/estrella-vida.png";
 import fotoPerfil from "../assets/fto_pac.jpg";
 import "../css/styles-seg.css";
+import Sidebar from "../components/Sidebar";
+
 
 function Seguimiento() {
   const [paciente, setPaciente] = useState(null);

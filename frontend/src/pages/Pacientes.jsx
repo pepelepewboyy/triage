@@ -4,6 +4,8 @@ import Swal from "sweetalert2";
 import api from "../services/api";
 import "../css/style-dash.css";
 import logo from "../assets/estrella-vida.png";
+import Sidebar from "../components/Sidebar";
+
 
 function Pacientes() {
   const [pacientes, setPacientes] = useState([]);

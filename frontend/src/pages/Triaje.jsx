@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import logo from "../assets/estrella-vida.png";
 import api from "../services/api";
+import Sidebar from "../components/Sidebar";
 import "../css/styles-triage.css";
 
 export default function Triage() {

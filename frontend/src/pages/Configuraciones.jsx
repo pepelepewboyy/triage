@@ -4,6 +4,8 @@ import Swal from "sweetalert2";
 import api from "../services/api";
 import logo from "../assets/estrella-vida.png";
 import "../css/styles-config.css";
+import Sidebar from "../components/Sidebar";
+
 
 export default function Configuraciones() {
   const [usuarios, setUsuarios] = useState([]);

@@ -25,66 +25,19 @@ body {
     min-height: 100vh;
 }
 
-.sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 10;
-    display: flex;
-    flex-direction: column;
-    width: 220px;
-    min-height: 100vh;
-    padding-top: 20px;
-    background-color: #f5f5f5;
-    color: #515050;
-}
-
-.logo {
-    text-align: center;
-    font-size: 28px;
-    margin-bottom: 30px;
-}
-
-.logo img {
-    width: 90px;
-    height: auto;
-}
-
-.menu {
-    width: 100%;
-}
-
-.menu a {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 15px 25px;
-    color: #515050;
-    text-decoration: none;
-    transition: 0.3s;
-}
-
-.menu a:hover {
-    background-color: #2d60ff;
-    color: #fff;
-    cursor: pointer;
-}
-
-.active {
-    color: #2d60ff;
-}
-
-.active:hover {
-    background-color: #2d60ff;
-    color: #fff;
-    cursor: pointer;
-}
-
+/* =========================================
+   CONTENIDO PRINCIPAL
+========================================= */
 .main {
     flex: 1;
-    margin-left: 220px;
-    width: calc(100vw - 220px);
+    min-width: 0;
+    padding: 24px 28px;
 }
+
+
+/* =========================================
+   CONTENIDO PRINCIPAL
+========================================= */
 
 .topbar {
     min-height: 60px;
@@ -188,8 +141,11 @@ button {
 }
 
 .tab-con {
-    overflow-y: auto;
     overflow-x: auto;
+    width: 100%;
+}
+
+table {
     width: 100%;
     min-width: 640px;
     border-collapse: collapse;
@@ -251,9 +207,6 @@ td {
     background: rgba(0, 0, 0, 0.4);
 }
 
-/* =========================================
-   MODAL
-========================================= */
 .modal-content {
     position: relative;
     width: 100%;
@@ -279,9 +232,6 @@ td {
     }
 }
 
-/* =========================================
-   HEADER
-========================================= */
 .modal-header {
     display: flex;
     align-items: center;
@@ -300,9 +250,6 @@ td {
     gap: 10px;
 }
 
-/* =========================================
-   BOTON CERRAR
-========================================= */
 .btnClose {
     display: flex;
     width: 35px;
@@ -321,9 +268,6 @@ td {
     color: #ef4444;
 }
 
-/* =========================================
-   FORMULARIO
-========================================= */
 .modal-form {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -334,9 +278,6 @@ td {
     grid-column: span 2;
 }
 
-/* =========================================
-   LABELS
-========================================= */
 .modal-form label {
     display: block;
     margin-bottom: 5px;
@@ -346,9 +287,6 @@ td {
     text-transform: uppercase;
 }
 
-/* =========================================
-   INPUTS
-========================================= */
 .modal-form input,
 .modal-form select,
 .modal-form textarea {
@@ -373,9 +311,6 @@ td {
     resize: vertical;
 }
 
-/* =========================================
-   TITULOS DE SECCION
-========================================= */
 .section-title {
     grid-column: span 2;
     margin-top: 10px;
@@ -386,9 +321,6 @@ td {
     border-bottom: 1px solid #f1f5f9;
 }
 
-/* =========================================
-   BOTON GUARDAR
-========================================= */
 .btn_guardar {
     display: flex;
     justify-content: center;
@@ -412,6 +344,9 @@ td {
     background: #2149c5;
 }
 
+/* =========================================
+   RESPONSIVE
+========================================= */
 @media (max-width: 768px) {
     .modal-content {
         padding: 24px 18px;
@@ -437,19 +372,10 @@ td {
 }
 
 @media screen and (max-width: 1024px) {
-    .sidebar {
-        width: 200px;
-    }
-    .main {
-        width: calc(100% - 200px);
-        margin-left: 200px;
-        padding: 20px;
-    }
     .card p {
         font-size: 18px;
     }
     table {
-        min-width: 580px;
         font-size: 14px;
     }
     th, td {
@@ -458,41 +384,23 @@ td {
 }
 
 @media screen and (max-width: 768px) {
-    .sidebar {
-        width: 72px;
-        align-items: center;
-        padding-top: 15px;
-    }
-    .logo img {
-        width: 40px;
-        height: 40px;
-    }
-    .menu a {
-        justify-content: center;
-        padding: 15px 0;
-        font-size: 0;
-    }
-    .menu a i {
-        font-size: 20px;
-    }
+
     .main {
-        width: calc(100% - 72px);
-        margin-left: 72px;
         padding: 16px;
     }
-    .topbar {
-        padding: 16px;
-    }
-    .cards {
-        grid-template-columns: 1fr;
-    }
-    .card {
-        flex-direction: row;
-        align-items: center;
-    }
+
     .table-container,
     .chart {
         padding: 16px;
+    }
+
+    .cards {
+        grid-template-columns: 1fr;
+    }
+
+    .card {
+        flex-direction: row;
+        align-items: center;
     }
 }
 
@@ -503,11 +411,6 @@ td {
     .topbar h2,
     .topbar h3 {
         font-size: 18px;
-    }
-    .circulo,
-    .view {
-        width: 52px;
-        height: 52px;
     }
     table {
         min-width: 520px;

@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import Swal from "sweetalert2";
+import { useNavigate } from "react-router-dom";
 import api from "../services/api";
-import logo from "../assets/estrella-vida.png";
+import Sidebar from "../components/Sidebar";
 import "../css/style-dash.css";
 
 function Dashboard() {
@@ -10,6 +9,7 @@ function Dashboard() {
 
   const [usuario, setUsuario] = useState(null);
   const [pacientes, setPacientes] = useState([]);
+const [sidebarOpen, setSidebarOpen] = useState(true); // visible por defecto
 
   const cargarPacientes = async () => {
     try {
@@ -20,33 +20,13 @@ function Dashboard() {
     }
   };
 
-  const cerrarSesion = async () => {
-    const result = await Swal.fire({
-      title: "Cerrar sesión",
-      text: "¿Deseas salir del sistema?",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "Sí, salir",
-      cancelButtonText: "Cancelar",
-    });
-
-    if (result.isConfirmed) {
-      localStorage.clear();
-      navigate("/");
-    }
-  };
-
   useEffect(() => {
     const usuarioGuardado = JSON.parse(localStorage.getItem("usuario"));
-
     if (!usuarioGuardado) {
       navigate("/");
       return;
     }
-
     setUsuario(usuarioGuardado);
-
-    // Aquí después cargaremos los pacientes desde Laravel
     cargarPacientes();
   }, [navigate]);
 
@@ -55,112 +35,59 @@ function Dashboard() {
     navigate(`/seguimiento/${id}`);
   };
 
-  if (!usuario) {
-    return <h2>Cargando...</h2>;
-  }
+  if (!usuario) return <h2>Cargando...</h2>;
 
   return (
     <div className="dashboard-container">
-      {/* SIDE BAR */}
-      <div className="sidebar">
-        <div className="logo">
-          <img src={logo} alt="TrIAge" />
-        </div>
-
-        <div className="menu">
-          <Link to="/dashboard" className="active">
-            <i className="fa-solid fa-house"></i>
-            Dashboard
-          </Link>
-
-          <Link to="/pacientes">
-            <i className="fa-solid fa-user"></i>
-            Pacientes
-          </Link>
-
-          <Link to="/triaje">
-            <i className="fa-solid fa-notes-medical"></i>
-            Triaje
-          </Link>
-
-          <Link to="/configuraciones">
-            <i className="fa-solid fa-gear"></i>
-            Configuraciones
-          </Link>
-
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              cerrarSesion();
-            }}
-          >
-            <i className="fa-solid fa-right-from-bracket"></i>
-            Cerrar sesión
-          </a>
-        </div>
-      </div>
-
-      <div className="main">
-        <div className="topbar">
-          <h3>Dashboard</h3>
-
-          <div className="user">
-            ¡Hola! {usuario.nombre}
-          </div>
-        </div>
+<Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+  <div className="main">
+    <div className="topbar">
+      <button className="hamburger" onClick={() => setSidebarOpen(!sidebarOpen)}>
+        <i className="fa-solid fa-bars"></i>
+      </button>
+      <h3>Dashboard</h3>
+      <div className="user">¡Hola! {usuario.nombre}</div>
+    </div>
+    {/* resto igual */}
 
         <div className="table-container">
           <h3>Pacientes urgentes</h3>
-
-          <table id="usuariosTabla">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Edad</th>
-                <th>Síntomas</th>
-                <th>Comentarios</th>
-                <th>Acción</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {pacientes.length === 0 ? (
+          <div className="tab-con">
+            <table id="usuariosTabla">
+              <thead>
                 <tr>
-                  <td
-                    colSpan="6"
-                    style={{
-                      textAlign: "center",
-                    }}
-                  >
-                    No hay pacientes
-                  </td>
+                  <th>ID</th>
+                  <th>Nombre</th>
+                  <th>Edad</th>
+                  <th>Síntomas</th>
+                  <th>Comentarios</th>
+                  <th>Acción</th>
                 </tr>
-              ) : (
-                pacientes.map((paciente) => (
-                  <tr key={paciente.id_paciente}>
-                    <td>{paciente.id_paciente}</td>
-                    <td>{paciente.nombre_completo}</td>
-                    <td>{paciente.edad}</td>
-                    <td>{paciente.sintomas}</td>
-                    <td>{paciente.comentarios}</td>
-                    <td>
-                      <button
-                        className="view"
-                        onClick={() => verPaciente(paciente.id_paciente)}
-                      >
-                        <i
-                          className="fa-solid fa-eye"
-                          style={{ color: "#16DBCC" }}
-                        />
-                      </button>
-                    </td>
+              </thead>
+              <tbody>
+                {pacientes.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: "center" }}>No hay pacientes</td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  pacientes.map((paciente) => (
+                    <tr key={paciente.id_paciente}>
+                      <td>{paciente.id_paciente}</td>
+                      <td>{paciente.nombre_completo}</td>
+                      <td>{paciente.edad}</td>
+                      <td>{paciente.sintomas}</td>
+                      <td>{paciente.comentarios}</td>
+                      <td>
+                        <button className="view" onClick={() => verPaciente(paciente.id_paciente)}>
+                          <i className="fa-solid fa-eye" style={{ color: "#16DBCC" }} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
