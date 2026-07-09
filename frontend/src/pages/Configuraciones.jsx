@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import Swal from "sweetalert2";
 import api from "../services/api";
-import logo from "../assets/estrella-vida.png";
+import Swal from "sweetalert2";
 import "../css/styles-config.css";
+import Sidebar from "../components/Sidebar";
 
 export default function Configuraciones() {
   const [usuarios, setUsuarios] = useState([]);
-
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const [usuarioEdit, setUsuarioEdit] = useState({
     id_persona: "",
@@ -27,23 +26,7 @@ export default function Configuraciones() {
     usuario: "",
     password: "",
   });
-  const navigate = useNavigate();
-  const cerrarSesion = async () => {
-    const result = await Swal.fire({
-      title: "Cerrar sesión",
-      text: "¿Deseas salir del sistema?",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "Sí, salir",
-      cancelButtonText: "Cancelar",
-    });
 
-    if (result.isConfirmed) {
-      localStorage.clear();
-
-      navigate("/");
-    }
-  };
   const cargarUsuarios = async () => {
     try {
       const response = await api.get("/personas");
@@ -98,7 +81,7 @@ export default function Configuraciones() {
         password: nuevoUsuario.password,
       });
       Swal.fire({
-        icon: "Success",
+        icon: "success",
         title: "El usuario se ha registrado con éxito",
       });
 
@@ -120,7 +103,7 @@ export default function Configuraciones() {
         title: "Oops...",
         text: "Error al registrar al usuario",
       });
-      console.log(error.response.data.message);
+      console.log(error.response?.data?.message);
     }
   };
 
@@ -160,54 +143,22 @@ export default function Configuraciones() {
       });
     }
   };
+
   useEffect(() => {
     cargarUsuarios();
   }, []);
+
   return (
     <>
-      <div className="config-container">
-        {/* SIDEBAR */}
-        <div className="sidebar">
-          <div className="logo">
-            <img src={logo} alt="TrIAge" />
-          </div>
+      <div className="dashboard-container">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-          <div className="menu">
-            <Link to="/dashboard">
-              <i className="fa-solid fa-house"></i>
-              Dashboard
-            </Link>
-
-            <Link to="/pacientes">
-              <i className="fa-solid fa-user"></i>
-              Pacientes
-            </Link>
-
-            <Link to="/triaje">
-              <i className="fa-solid fa-notes-medical"></i>
-              Triaje
-            </Link>
-
-            <Link to="/configuraciones" className="active">
-              <i className="fa-solid fa-gear"></i>
-              Configuraciones
-            </Link>
-
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                cerrarSesion();
-              }}
-            >
-              <i className="fa-solid fa-right-from-bracket"></i>
-              Cerrar sesión
-            </a>
-          </div>
-        </div>
         <div className="main">
           <header className="topbar">
-            <h3>Configuraciones</h3>
+            <button className="hamburger" onClick={() => setSidebarOpen(!sidebarOpen)}>
+              <i className="fa-solid fa-bars"></i>
+            </button>
+            <h3>Configuración</h3>
             <div className="user">Administración de usuarios</div>
           </header>
 
@@ -215,12 +166,7 @@ export default function Configuraciones() {
             <div className="panel-header">
               <h4>Administración de usuarios</h4>
 
-              <button
-                id="addUserBtn"
-                onClick={() => {
-                  setShowAddModal(true);
-                }}
-              >
+              <button id="addUserBtn" onClick={() => setShowAddModal(true)}>
                 + Nuevo usuario
               </button>
             </div>
@@ -251,15 +197,10 @@ export default function Configuraciones() {
                       <td>{u.apellidos}</td>
                       <td>{u.rol}</td>
                       <td>{u.usuario}</td>
-
                       <td>
                         <div className="actions">
                           <button onClick={() => abrirEditar(u)}>Editar</button>
-
-                          <button
-                            className="secondary"
-                            onClick={() => eliminarUsuario(u.id_persona)}
-                          >
+                          <button className="secondary" onClick={() => eliminarUsuario(u.id_persona)}>
                             Eliminar
                           </button>
                         </div>
@@ -272,18 +213,12 @@ export default function Configuraciones() {
           </section>
         </div>
 
-        {/* EDITAR */}
-
         {showEditModal && (
           <div className="modal">
             <div className="modal-content">
               <div className="modal-header">
-                <h2>Detalle del Médico</h2>
-
-                <div
-                  className="btnClose"
-                  onClick={() => setShowEditModal(false)}
-                >
+                <h2>Detalles del médico</h2>
+                <div className="btnClose" onClick={() => setShowEditModal(false)}>
                   ✕
                 </div>
               </div>
@@ -291,46 +226,28 @@ export default function Configuraciones() {
               <div className="modal-form">
                 <div>
                   <label>Nombre</label>
-
                   <input
                     value={usuarioEdit.nombre}
-                    onChange={(e) =>
-                      setUsuarioEdit({
-                        ...usuarioEdit,
-                        nombre: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setUsuarioEdit({ ...usuarioEdit, nombre: e.target.value })}
                   />
                 </div>
 
                 <div>
                   <label>Apellido</label>
-
                   <input
                     value={usuarioEdit.apellidos}
-                    onChange={(e) =>
-                      setUsuarioEdit({
-                        ...usuarioEdit,
-                        apellidos: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setUsuarioEdit({ ...usuarioEdit, apellidos: e.target.value })}
                   />
                 </div>
 
                 <div>
                   <label>Rol</label>
-
                   <select
                     value={usuarioEdit.rol}
-                    onChange={(e) =>
-                      setUsuarioEdit({
-                        ...usuarioEdit,
-                        rol: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setUsuarioEdit({ ...usuarioEdit, rol: e.target.value })}
                   >
-                    <option>Medico(a)</option>
-                    <option>Paramedico(a)</option>
+                    <option>Médico(a)</option>
+                    <option>Paramédico(a)</option>
                     <option>Enfermero(a)</option>
                     <option>Admin</option>
                   </select>
@@ -338,52 +255,34 @@ export default function Configuraciones() {
 
                 <div>
                   <label>Usuario</label>
-
                   <input
                     value={usuarioEdit.usuario}
-                    onChange={(e) =>
-                      setUsuarioEdit({
-                        ...usuarioEdit,
-                        usuario: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setUsuarioEdit({ ...usuarioEdit, usuario: e.target.value })}
                   />
                 </div>
 
                 <div className="full">
                   <label>Contraseña</label>
-
                   <input
                     value={usuarioEdit.psswrd}
-                    onChange={(e) =>
-                      setUsuarioEdit({
-                        ...usuarioEdit,
-                        psswrd: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setUsuarioEdit({ ...usuarioEdit, psswrd: e.target.value })}
                   />
                 </div>
 
                 <div className="full">
-                  <button onClick={guardarEdicion}>Guardar Cambios</button>
+                  <button onClick={guardarEdicion}>Guardar cambios</button>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* AGREGAR */}
-
         {showAddModal && (
           <div className="modal">
             <div className="modal-content">
               <div className="modal-header">
-                <h2>Agregar Médico</h2>
-
-                <div
-                  className="btnClose"
-                  onClick={() => setShowAddModal(false)}
-                >
+                <h2>Agregar médico</h2>
+                <div className="btnClose" onClick={() => setShowAddModal(false)}>
                   ✕
                 </div>
               </div>
@@ -391,46 +290,28 @@ export default function Configuraciones() {
               <div className="modal-form">
                 <div>
                   <label>Nombre</label>
-
                   <input
                     value={nuevoUsuario.nombre}
-                    onChange={(e) =>
-                      setNuevoUsuario({
-                        ...nuevoUsuario,
-                        nombre: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, nombre: e.target.value })}
                   />
                 </div>
 
                 <div>
                   <label>Apellido</label>
-
                   <input
                     value={nuevoUsuario.apellidos}
-                    onChange={(e) =>
-                      setNuevoUsuario({
-                        ...nuevoUsuario,
-                        apellidos: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, apellidos: e.target.value })}
                   />
                 </div>
 
                 <div>
                   <label>Rol</label>
-
                   <select
                     value={nuevoUsuario.rol}
-                    onChange={(e) =>
-                      setNuevoUsuario({
-                        ...nuevoUsuario,
-                        rol: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, rol: e.target.value })}
                   >
-                    <option>Medico(a)</option>
-                    <option>Paramedico(a)</option>
+                    <option>Médico(a)</option>
+                    <option>Paramédico(a)</option>
                     <option>Enfermero(a)</option>
                     <option>Admin</option>
                   </select>
@@ -438,34 +319,22 @@ export default function Configuraciones() {
 
                 <div>
                   <label>Usuario</label>
-
                   <input
                     value={nuevoUsuario.usuario}
-                    onChange={(e) =>
-                      setNuevoUsuario({
-                        ...nuevoUsuario,
-                        usuario: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, usuario: e.target.value })}
                   />
                 </div>
 
                 <div className="full">
                   <label>Contraseña</label>
-
                   <input
                     value={nuevoUsuario.password}
-                    onChange={(e) =>
-                      setNuevoUsuario({
-                        ...nuevoUsuario,
-                        password: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, password: e.target.value })}
                   />
                 </div>
 
                 <div className="full">
-                  <button onClick={agregarUsuario}>Agregar Usuario</button>
+                  <button onClick={agregarUsuario}>Agregar usuario</button>
                 </div>
               </div>
             </div>

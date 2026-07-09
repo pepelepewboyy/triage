@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Hash;
 use App\Models\Persona;
 use Illuminate\Http\Request;
 
@@ -9,39 +10,47 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        $request->validate([
-            'usuario' => 'required',
-            'password' => 'required'
-        ]);
+        try {
+            $request->validate([
+                'usuario' => 'required',
+                'password' => 'required'
+            ]);
 
-        $persona = Persona::where('usuario', $request->usuario)
-            ->where('estado', 'Activo')
-            ->first();
+            $persona = Persona::where('usuario', $request->usuario)
+                ->where('estado', 'Activo')
+                ->first();
+            $persona-> password = Hash::make($request->password);
 
-        if (!$persona) {
+            if (!$persona) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Usuario o contraseña incorrectos'
+                ], 401);
+            }
+
+            if (!password_verify($request->password, $persona->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Usuario o contraseña incorrectos'
+                ], 401);
+            }
+
             return response()->json([
-                'success' => false,
-                'message' => 'Usuario o contraseña incorrectos'
-            ], 401);
-        }
+                'success' => true,
+                'usuario' => [
+                    'id_persona' => $persona->id_persona,
+                    'nombre' => $persona->nombre,
+                    'apellidos' => $persona->apellidos,
+                    'usuario' => $persona->usuario,
+                    'rol' => $persona->rol
+                ]
+            ]);
+        } catch (\Exception $e) {
+    return response()->json([
+        'error' => $e->getMessage()
+    ], 500);
+}
 
-        if (!password_verify($request->password, $persona->password)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Usuario o contraseña incorrectos'
-            ], 401);
-        }
-
-        return response()->json([
-            'success' => true,
-            'usuario' => [
-                'id_persona' => $persona->id_persona,
-                'nombre' => $persona->nombre,
-                'apellidos' => $persona->apellidos,
-                'usuario' => $persona->usuario,
-                'rol' => $persona->rol
-            ]
-        ]);
     }
     public function logout(Request $request)
 {
