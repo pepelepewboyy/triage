@@ -12,141 +12,177 @@ class PacienteController extends Controller
     | INSERTAR PACIENTE
     |--------------------------------------------------------------------------
     */
-public function store(Request $request)
-{
-    try {
+    public function store(Request $request)
+    {
+        try {
 
-        $id = DB::table('pacientes')
-            ->insertGetId([
+            // Acepta edad_meses directo, o convierte "edad" (años) si es lo
+            // único que manda el formulario mientras se termina de migrar.
+            $edadMeses = $request->edad_meses
+                ?? ($request->edad !== null ? intval($request->edad) * 12 : null);
 
-                'nombre_completo' =>
-                    $request->nombre_completo,
+            $id = DB::table('pacientes')
+                ->insertGetId([
 
-                'fecha_nacimiento' =>
-                    $request->fecha_nacimiento,
+                    'nombre_completo' =>
+                        $request->nombre_completo,
 
-                'edad' =>
-                    $request->edad,
+                    'fecha_nacimiento' =>
+                        $request->fecha_nacimiento,
 
-                'sexo' =>
-                    $request->sexo,
+                    'edad_meses' =>
+                        $edadMeses,
 
-                'nss' =>
-                    $request->nss,
+                    'edad_estimada' =>
+                        $request->edad_estimada ?? (empty($request->fecha_nacimiento) ? 1 : 0),
 
-                'tipo_sangre' =>
-                    $request->tipo_sangre,
+                    'sexo' =>
+                        $request->sexo,
 
-                'donador_organos' =>
-                    $request->donador_organos ?? 'NO',
+                    'nss' =>
+                        $request->nss,
 
-                'fk_contacto' => 1,
-                'fk_hospital' => 1,
+                    'tipo_sangre' =>
+                        $request->tipo_sangre ?? 'DESCONOCIDO',
 
-                'estado' => 'Activo'
-            ]);
+                    'donador_organos' =>
+                        $request->donador_organos ?? 'NO',
 
-        return response()->json([
-            'success' => true,
-            'id_paciente' => $id
-        ], 201);
+                    'estado' => 'Activo'
+                ]);
 
-    } catch (\Exception $e) {
+            return response()->json([
+                'success' => true,
+                'id_paciente' => $id
+            ], 201);
 
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage()
-        ], 500);
+        } catch (\Exception $e) {
 
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+
+        }
     }
-}
 
     /*
     |--------------------------------------------------------------------------
-    | LISTAR PACIENTES
+    | LISTAR PACIENTES (con su triage más reciente)
     |--------------------------------------------------------------------------
     */
-
     public function index()
     {
-        return DB::table('triage as t')
-            ->join(
-                'pacientes as p',
-                't.fk_paciente',
-                '=',
-                'p.id_paciente'
-            )
+        // Último triage activo por paciente (evita filas duplicadas si
+        // un paciente tiene varios registros de triage).
+        $ultimoTriage = DB::table('triage')
+            ->select('fk_paciente', DB::raw('MAX(id_triage) as id_triage'))
+            ->where('estado', 'Activo')
+            ->groupBy('fk_paciente');
+
+        return DB::table('pacientes as p')
+            ->joinSub($ultimoTriage, 'ut', function ($join) {
+                $join->on('ut.fk_paciente', '=', 'p.id_paciente');
+            })
+            ->join('triage as t', 't.id_triage', '=', 'ut.id_triage')
+            ->join('niveles_triage as n', 'n.id_nivel', '=', 't.fk_nivel')
+            ->join('metodos_triage as m', 'm.id_metodo', '=', 't.fk_metodo')
             ->select(
                 't.id_triage',
                 'p.id_paciente',
                 'p.nombre_completo',
-                'p.edad',
+                'p.edad_meses',
+                'p.edad_estimada',
                 'p.sexo',
-                'p.tipo_sangre',
-                'p.donador_organos',
-                'p.nss',
-                't.estado',
+
+                'm.codigo as metodo_codigo',
+                'm.nombre as metodo',
+
+                'n.color as prioridad',
+                'n.nombre as nivel',
+
                 't.sintomas',
-                't.metodo_evaluacion',
-                't.nivel_evaluacion',
-                't.comentarios',
-                't.frecuencia_cardiaca',
-                't.presion_arterial',
-                't.temperatura',
+                't.estado',
                 't.habitacion',
-                't.fk_persona'
+                't.fecha_triage'
             )
-            ->where('t.estado', 'Activo')
             ->where('p.estado', 'Activo')
+            ->orderBy('n.orden_prioridad')
+            ->orderBy('t.fecha_triage')
             ->get();
     }
 
     /*
     |--------------------------------------------------------------------------
-    | OBTENER PACIENTE
+    | OBTENER PACIENTE (paciente + triage más reciente + detalle del método)
     |--------------------------------------------------------------------------
     */
 
     public function show($id)
     {
-        $paciente = DB::table('pacientes as p')
-            ->join(
-                'triage as t',
-                'p.id_paciente',
-                '=',
-                't.fk_paciente'
-            )
-            ->join(
-                'contactoemergencia as c',
-                'c.id_contacto',
-                '=',
-                'p.fk_contacto'
-            )
-            ->select(
-                'p.id_paciente',
-                'p.nombre_completo',
-                'p.edad',
-                'p.tipo_sangre',
-                'p.donador_organos',
-                'p.sexo',
-                'p.nss',
-                't.id_triage',
-                't.nivel_evaluacion',
-                't.comentarios',
-                't.sintomas',
-                't.estado',
-                't.frecuencia_cardiaca',
-                't.presion_arterial',
-                't.temperatura',
-                't.habitacion',
-                'c.nombre_completo as nombreContacto',
-                'c.parentesco',
-                'c.contacto'
-            )
-            ->where('p.id_paciente', $id)
+        $paciente = DB::table('pacientes')
+            ->where('id_paciente', $id)
             ->first();
 
-        return response()->json($paciente);
+        if (!$paciente) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Paciente no encontrado'
+            ], 404);
+        }
+
+        $triage = DB::table('triage as t')
+            ->join('niveles_triage as n', 'n.id_nivel', '=', 't.fk_nivel')
+            ->join('metodos_triage as m', 'm.id_metodo', '=', 't.fk_metodo')
+            ->select(
+                't.id_triage',
+                't.fk_metodo',
+                't.fk_nivel',
+                't.sintomas',
+                't.comentarios',
+                't.habitacion',
+                't.estado',
+                't.fecha_triage',
+                'm.codigo as metodo_codigo',
+                'm.nombre as metodo_nombre',
+                'n.nombre as nivel_nombre',
+                'n.color'
+            )
+            ->where('t.fk_paciente', $id)
+            ->where('t.estado', 'Activo')
+            ->orderByDesc('t.fecha_triage')
+            ->first();
+
+        // Cada método guarda sus propios criterios/signos vitales en su
+        // tabla de detalle; se consulta la que corresponda.
+        $detalle = null;
+
+        if ($triage) {
+            $detalle = match ($triage->metodo_codigo) {
+                'IGU_IMSS' => DB::table('triage_imss')
+                    ->where('fk_triage', $triage->id_triage)
+                    ->first(),
+
+                'ISSSTE' => DB::table('triage_isste as ti')
+                    ->leftJoin('patologias_isste as pa', 'pa.id_patologia', '=', 'ti.fk_patologia')
+                    ->select('ti.*', 'pa.nombre as patologia')
+                    ->where('ti.fk_triage', $triage->id_triage)
+                    ->first(),
+
+                'START_JUMPSTART' => DB::table('triage_start')
+                    ->where('fk_triage', $triage->id_triage)
+                    ->first(),
+
+                default => null,
+            };
+        }
+
+        return response()->json([
+            'success' => true,
+            'paciente' => $paciente,
+            'triage' => $triage,
+            'detalle' => $detalle,
+        ]);
     }
 
     /*
@@ -157,48 +193,96 @@ public function store(Request $request)
 
     public function update(Request $request, $id)
     {
-         
         DB::beginTransaction();
 
         try {
 
+            // --- Datos básicos del paciente ---
             DB::table('pacientes')
-                ->where(
-                    'id_paciente',
-                    $id
-                )
-            ->update([
-                'nombre_completo' => $request->nombre_completo,
-                'edad' => $request->edad,
-                'sexo' => $request->sexo,
-                'nss' => $request->nss,
-                'tipo_sangre' => $request->tipo_sangre,
-                'donador_organos' => $request->donador_organos
-            ]);
-            DB::table('triage')
-                ->where(
-                    'id_triage',
-                    $request->id_triage
-                )
+                ->where('id_paciente', $id)
                 ->update([
-                    'nivel_evaluacion' =>
-                        $request->nivel_evaluacion,
-
-                    'sintomas' =>
-                        $request->sintomas,
-
-                    'frecuencia_cardiaca' =>
-                        $request->frecuencia_cardiaca,
-
-                    'presion_arterial' =>
-                        $request->presion_arterial,
-
-                    'temperatura' =>
-                        $request->temperatura,
-
-                    'habitacion' =>
-                        $request->habitacion
+                    'nombre_completo' => $request->nombre_completo,
+                    'edad_meses' => $request->edad_meses,
+                    'edad_estimada' => $request->edad_estimada ?? 0,
+                    'sexo' => $request->sexo,
+                    'nss' => $request->nss,
+                    'tipo_sangre' => $request->tipo_sangre,
+                    'donador_organos' => $request->donador_organos,
                 ]);
+
+            $triage = DB::table('triage')
+                ->where('id_triage', $request->id_triage)
+                ->first();
+
+            if (!$triage) {
+                throw new \Exception('Triage no encontrado para este paciente.');
+            }
+
+            // --- Cabecera del triage (común a los 3 métodos) ---
+            DB::table('triage')
+                ->where('id_triage', $triage->id_triage)
+                ->update([
+                    'fk_nivel' => $request->fk_nivel,
+                    'sintomas' => $request->sintomas,
+                    'comentarios' => $request->comentarios,
+                    'habitacion' => $request->habitacion,
+                ]);
+
+            $metodoCodigo = DB::table('metodos_triage')
+                ->where('id_metodo', $triage->fk_metodo)
+                ->value('codigo');
+
+            // --- Detalle específico según el método del triage ---
+            switch ($metodoCodigo) {
+
+                case 'IGU_IMSS':
+                    DB::table('triage_imss')
+                        ->where('fk_triage', $triage->id_triage)
+                        ->update([
+                            'requiere_reanimacion' => $request->requiere_reanimacion,
+                            'alto_riesgo' => $request->alto_riesgo,
+                            'deterioro_neurologico_agudo' => $request->deterioro_neurologico_agudo,
+                            'dolor_severo' => $request->dolor_severo,
+                            'dificultad_respiratoria_severa' => $request->dificultad_respiratoria_severa,
+                            'num_acciones_dx_tx' => $request->num_acciones_dx_tx,
+                            'frecuencia_cardiaca' => $request->frecuencia_cardiaca,
+                            'frecuencia_respiratoria' => $request->frecuencia_respiratoria,
+                            'saturacion_oxigeno' => $request->saturacion_oxigeno,
+                            'signos_vitales_en_riesgo' => $request->signos_vitales_en_riesgo,
+                        ]);
+                    break;
+
+                case 'ISSSTE':
+                    DB::table('triage_isste')
+                        ->where('fk_triage', $triage->id_triage)
+                        ->update([
+                            'glasgow' => $request->glasgow,
+                            'presion_sistolica' => $request->presion_sistolica,
+                            'presion_diastolica' => $request->presion_diastolica,
+                            'frecuencia_cardiaca' => $request->frecuencia_cardiaca,
+                            'frecuencia_respiratoria' => $request->frecuencia_respiratoria,
+                            'temperatura' => $request->temperatura,
+                            'saturacion_oxigeno' => $request->saturacion_oxigeno,
+                            'glucosa_capilar' => $request->glucosa_capilar,
+                            'fk_patologia' => $request->fk_patologia,
+                        ]);
+                    break;
+
+                case 'START_JUMPSTART':
+                    DB::table('triage_start')
+                        ->where('fk_triage', $triage->id_triage)
+                        ->update([
+                            'tipo_paciente' => $request->tipo_paciente,
+                            'deambula' => $request->deambula,
+                            'respira' => $request->respira,
+                            'frecuencia_respiratoria' => $request->frecuencia_respiratoria,
+                            'perfusion_alterada' => $request->perfusion_alterada,
+                            'estado_mental_alterado' => $request->estado_mental_alterado,
+                            'ventilaciones_administradas' => $request->ventilaciones_administradas,
+                            'intervenciones_criticas' => $request->intervenciones_criticas,
+                        ]);
+                    break;
+            }
 
             DB::commit();
 
@@ -223,7 +307,6 @@ public function store(Request $request)
     | ELIMINACIÓN LÓGICA
     |--------------------------------------------------------------------------
     */
-
 
     public function eliminarPaciente($id)
     {
@@ -271,16 +354,11 @@ public function store(Request $request)
     public function buscar($busqueda)
     {
         return DB::table('pacientes')
-            ->where(
-                'nombre_completo',
-                'like',
-                "%{$busqueda}%"
-            )
-            ->orWhere(
-                'nss',
-                'like',
-                "%{$busqueda}%"
-            )
+            ->where('estado', 'Activo')
+            ->where(function ($query) use ($busqueda) {
+                $query->where('nombre_completo', 'like', "%{$busqueda}%")
+                      ->orWhere('nss', 'like', "%{$busqueda}%");
+            })
             ->get();
     }
 }

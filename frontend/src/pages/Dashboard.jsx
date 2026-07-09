@@ -9,7 +9,7 @@ function Dashboard() {
 
   const [usuario, setUsuario] = useState(null);
   const [pacientes, setPacientes] = useState([]);
-const [sidebarOpen, setSidebarOpen] = useState(true); // visible por defecto
+  const [sidebarOpen, setSidebarOpen] = useState(true); // visible por defecto
 
   const cargarPacientes = async () => {
     try {
@@ -39,16 +39,19 @@ const [sidebarOpen, setSidebarOpen] = useState(true); // visible por defecto
 
   return (
     <div className="dashboard-container">
-<Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-  <div className="main">
-    <div className="topbar">
-      <button className="hamburger" onClick={() => setSidebarOpen(!sidebarOpen)}>
-        <i className="fa-solid fa-bars"></i>
-      </button>
-      <h3>Dashboard</h3>
-      <div className="user">¡Hola! {usuario.nombre}</div>
-    </div>
-    {/* resto igual */}
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <div className="main">
+        <div className="topbar">
+          <button
+            className="hamburger"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            <i className="fa-solid fa-bars"></i>
+          </button>
+          <h3>Dashboard</h3>
+          <div className="user">¡Hola! {usuario.nombre}</div>
+        </div>
+        {/* resto igual */}
 
         <div className="table-container">
           <h3>Pacientes urgentes</h3>
@@ -56,30 +59,65 @@ const [sidebarOpen, setSidebarOpen] = useState(true); // visible por defecto
             <table id="usuariosTabla">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Nombre</th>
+                  <th>Prioridad</th>
+                  <th>Paciente</th>
                   <th>Edad</th>
-                  <th>Síntomas</th>
-                  <th>Comentarios</th>
+                  <th>Método</th>
+                  <th>Motivo</th>
+                  <th>Ingreso</th>
+                  <th>Espera</th>
+                  <th>Estado</th>
                   <th>Acción</th>
                 </tr>
               </thead>
+
               <tbody>
                 {pacientes.length === 0 ? (
                   <tr>
-                    <td colSpan="6" style={{ textAlign: "center" }}>No hay pacientes</td>
+                    <td colSpan="9" style={{ textAlign: "center" }}>
+                      No hay pacientes
+                    </td>
                   </tr>
                 ) : (
                   pacientes.map((paciente) => (
-                    <tr key={paciente.id_paciente}>
-                      <td>{paciente.id_paciente}</td>
-                      <td>{paciente.nombre_completo}</td>
-                      <td>{paciente.edad}</td>
-                      <td>{paciente.sintomas}</td>
-                      <td>{paciente.comentarios}</td>
+                    <tr key={paciente.id}>
                       <td>
-                        <button className="view" onClick={() => verPaciente(paciente.id_paciente)}>
-                          <i className="fa-solid fa-eye" style={{ color: "#16DBCC" }} />
+                        <span
+                          className={`badge ${paciente.color?.toLowerCase()}`}
+                        >
+                          {paciente.color}
+                        </span>
+                      </td>
+
+                      <td>{paciente.nombre_completo}</td>
+
+                      <td>
+                        {paciente.edad === null
+                          ? "Desconocida"
+                          : paciente.edad_estimada
+                            ? `≈ ${paciente.edad} años`
+                            : `${paciente.edad} años`}
+                      </td>
+
+                      <td>{paciente.metodo}</td>
+
+                      <td>{paciente.motivo}</td>
+
+                      <td>{paciente.ingreso}</td>
+
+                      <td>{paciente.espera}</td>
+
+                      <td>{paciente.estado}</td>
+
+                      <td>
+                        <button
+                          className="view"
+                          onClick={() => verPaciente(paciente.id)}
+                        >
+                          <i
+                            className="fa-solid fa-eye"
+                            style={{ color: "#16DBCC" }}
+                          />
                         </button>
                       </td>
                     </tr>
