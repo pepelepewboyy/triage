@@ -89,18 +89,15 @@ form {
   font-size: 16px;
 }
 
+.institucion-card {
+  grid-column: span 3;
+}
+
 .sintomas {
-  grid-column: 1 / 3;
+  grid-column: span 2;
 }
 
-/* Tarjeta de método/nivel: ahora más ancha (2 columnas) */
-.metodo-nivel {
-  grid-column: 1 / 3;
-}
-
-/* Tarjeta de botones: ahora más angosta (1 columna) */
 .botones {
-  grid-column: 3 / 4;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -181,6 +178,54 @@ form {
 }
 
 /* =========================================
+   SLIDER TOGGLE (Institución / Método)
+========================================= */
+.slider-toggle {
+  position: relative;
+  display: flex;
+  background: #f0f1f5;
+  border-radius: 10px;
+  padding: 4px;
+  gap: 2px;
+}
+
+.slider-thumb {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  height: calc(100% - 8px);
+  background: #2d60ff;
+  border-radius: 8px;
+  transition: transform 0.3s ease, opacity 0.2s ease;
+  box-shadow: 0 2px 6px rgba(45, 96, 255, 0.35);
+  z-index: 0;
+}
+
+.slider-option {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  padding: 10px 6px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: color 0.2s ease;
+  white-space: nowrap;
+}
+
+.slider-option:hover {
+  color: #2d60ff;
+}
+
+.slider-option.active {
+  color: white;
+}
+
+/* =========================================
    INPUTS
 ========================================= */
 input,
@@ -203,7 +248,7 @@ textarea {
 }
 
 textarea {
-  min-height: 140px;
+  min-height: 100px;
   resize: vertical;
 }
 
@@ -213,7 +258,7 @@ label {
 }
 
 /* =========================================
-   BOTONES (unificados al mismo azul de la app)
+   BOTONES
 ========================================= */
 .btn {
   width: 100%;
@@ -283,16 +328,12 @@ label {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .institucion-card {
+    grid-column: span 2;
+  }
+
   .sintomas {
-    grid-column: 1 / 3;
-  }
-
-  .metodo-nivel {
-    grid-column: 1 / 3;
-  }
-
-  .botones {
-    grid-column: 1 / 3;
+    grid-column: span 2;
   }
 }
 
@@ -309,21 +350,40 @@ label {
     grid-template-columns: 1fr;
   }
 
+  .institucion-card {
+    grid-column: span 1;
+  }
+
   .sintomas {
-    grid-column: 1;
+    grid-column: span 1;
   }
 
-  .metodo-nivel {
-    grid-column: 1;
-  }
-
-  .botones {
-    grid-column: 1;
+  .slider-option {
+    font-size: 11px;
+    padding: 10px 4px;
   }
 }
 
 @media screen and (max-width: 480px) {
   .tabs {
     flex-direction: column;
+  }
+
+  .slider-toggle {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .slider-thumb {
+    display: none;
+  }
+
+  .slider-option {
+    background: #f8f9fb;
+  }
+
+  .slider-option.active {
+    background: #2d60ff;
+    color: white;
   }
 }
