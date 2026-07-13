@@ -4,6 +4,51 @@ import api from "../services/api";
 import Sidebar from "../components/Sidebar";
 import "../css/styles-triage.css";
 
+const INSTITUCIONES = [
+  { key: "IMSS", label: "IMSS" },
+  { key: "ISSSTE", label: "ISSSTE" },
+  { key: "Cruz Roja", label: "Cruz Roja / START" },
+];
+
+const CAMPOS_POR_INSTITUCION = {
+  IMSS: [
+    { key: "signos_vitales", label: "Signos vitales", type: "text" },
+    { key: "acciones_diagnosticas", label: "Acciones diagnósticas", type: "textarea" },
+    { key: "alto_riesgo", label: "¿Alto riesgo?", type: "select", options: ["Sí", "No"] },
+    { key: "reanimacion_inmediata", label: "¿Reanimación inmediata?", type: "select", options: ["Sí", "No"] },
+  ],
+  ISSSTE: [
+    { key: "frecuencia_cardiaca", label: "Frecuencia cardíaca", type: "text" },
+    { key: "frecuencia_respiratoria", label: "Frecuencia respiratoria", type: "text" },
+    { key: "glucosa_capilar", label: "Glucosa capilar", type: "text" },
+    { key: "presion_arterial", label: "Presión arterial", type: "text" },
+    { key: "saturacion_oxigeno", label: "Saturación de oxígeno", type: "text" },
+    { key: "temperatura", label: "Temperatura", type: "text" },
+    { key: "escala_glasgow", label: "Escala de Glasgow", type: "text" },
+  ],
+  "Cruz Roja": [
+    { key: "deambulacion", label: "Deambulación", type: "select", options: ["Camina", "No camina"] },
+    {
+      key: "respiracion",
+      label: "Respiración",
+      type: "select",
+      options: ["Ausente", "Presente < 30/min", "Presente > 30/min"],
+    },
+    {
+      key: "perfusion",
+      label: "Perfusión",
+      type: "select",
+      options: ["Llenado capilar < 2s", "Llenado capilar > 2s / pulso ausente"],
+    },
+    {
+      key: "estado_mental",
+      label: "Estado mental",
+      type: "select",
+      options: ["Obedece órdenes", "No obedece órdenes"],
+    },
+  ],
+};
+
 export default function Triage() {
   const [tipoPaciente, setTipoPaciente] = useState("existente");
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -24,15 +69,25 @@ export default function Triage() {
 
   const usuario = JSON.parse(localStorage.getItem("usuario"));
 
+  const [institucion, setInstitucion] = useState("");
+  const [datosMetodo, setDatosMetodo] = useState({});
+
   const [triage, setTriage] = useState({
-    frecuenciaCardiaca: "",
-    presion: "",
-    temperatura: "",
     sintomas: "",
     nivel_triage: "",
-    metodo_evaluacion: "",
     comentario: "",
   });
+
+  const seleccionarInstitucion = (inst) => {
+    setInstitucion(inst);
+    setDatosMetodo({});
+  };
+
+  const handleCampoChange = (key, value) => {
+    setDatosMetodo((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const activeIndex = INSTITUCIONES.findIndex((i) => i.key === institucion);
 
   const insertarPaciente = async () => {
     try {
@@ -73,7 +128,15 @@ export default function Triage() {
   };
 
   const insertarTriage = async () => {
-    if (!triage.sintomas || !triage.nivel_triage || !triage.metodo_evaluacion) {
+    if (!institucion) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Selecciona una institución / método",
+      });
+      return;
+    }
+    if (!triage.sintomas || !triage.nivel_triage) {
       Swal.fire({
         icon: "error",
         title: "Oops...",
@@ -93,12 +156,10 @@ export default function Triage() {
     try {
       const response = await api.post("/triage", {
         sintomas: triage.sintomas,
-        metodo: triage.metodo_evaluacion,
+        metodo: institucion,
+        datos_metodo: datosMetodo,
         nivel: triage.nivel_triage,
         comentario: triage.comentario,
-        frecuencia: triage.frecuenciaCardiaca,
-        presion: triage.presion,
-        temperatura: triage.temperatura,
         id_persona: usuario.id_persona,
         id_paciente: idPaciente,
       });
@@ -128,6 +189,8 @@ export default function Triage() {
     }
   };
 
+  const camposActivos = CAMPOS_POR_INSTITUCION[institucion] || [];
+
   return (
     <div className="dashboard-container">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -147,7 +210,6 @@ export default function Triage() {
             <div className="card">
               <h3>Paciente</h3>
 
-              {/* TABS */}
               <div className="tabs">
                 <button
                   type="button"
@@ -272,35 +334,65 @@ export default function Triage() {
 
           {/* TRIAGE */}
           <form id="formTriage">
-            <div className="card">
-              <h3>Frecuencia cardíaca</h3>
-              <input
-                type="text"
-                value={triage.frecuenciaCardiaca}
-                onChange={(e) => setTriage({ ...triage, frecuenciaCardiaca: e.target.value })}
-                required
-              />
+            {/* Selector de institución */}
+            <div className="card institucion-card">
+              <h3>Institución / Método de evaluación</h3>
+
+              <div className="slider-toggle">
+                <div
+                  className="slider-thumb"
+                  style={{
+                    width: `${100 / INSTITUCIONES.length}%`,
+                    transform: `translateX(${activeIndex >= 0 ? activeIndex * 100 : 0}%)`,
+                    opacity: activeIndex >= 0 ? 1 : 0,
+                  }}
+                ></div>
+
+                {INSTITUCIONES.map((inst) => (
+                  <button
+                    key={inst.key}
+                    type="button"
+                    className={`slider-option ${institucion === inst.key ? "active" : ""}`}
+                    onClick={() => seleccionarInstitucion(inst.key)}
+                  >
+                    {inst.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="card">
-              <h3>Presión arterial</h3>
-              <input
-                type="text"
-                value={triage.presion}
-                onChange={(e) => setTriage({ ...triage, presion: e.target.value })}
-                required
-              />
-            </div>
+            {/* Campos dinámicos según institución */}
+            {camposActivos.map((campo) => (
+              <div className="card" key={campo.key}>
+                <h3>{campo.label}</h3>
 
-            <div className="card">
-              <h3>Temperatura</h3>
-              <input
-                type="text"
-                value={triage.temperatura}
-                onChange={(e) => setTriage({ ...triage, temperatura: e.target.value })}
-                required
-              />
-            </div>
+                {campo.type === "select" ? (
+                  <select
+                    value={datosMetodo[campo.key] || ""}
+                    onChange={(e) => handleCampoChange(campo.key, e.target.value)}
+                  >
+                    <option value="">Seleccione</option>
+                    {campo.options.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                ) : campo.type === "textarea" ? (
+                  <textarea
+                    rows="4"
+                    value={datosMetodo[campo.key] || ""}
+                    onChange={(e) => handleCampoChange(campo.key, e.target.value)}
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    value={datosMetodo[campo.key] || ""}
+                    onChange={(e) => handleCampoChange(campo.key, e.target.value)}
+                  />
+                )}
+              </div>
+            ))}
 
             <div className="card sintomas">
               <h3>Síntomas e historia clínica</h3>
@@ -321,22 +413,7 @@ export default function Triage() {
               />
             </div>
 
-            <div className="card metodo-nivel">
-
-              <h3>Método de evaluación</h3>
-              <select
-                value={triage.metodo_evaluacion}
-                onChange={(e) => setTriage({ ...triage, metodo_evaluacion: e.target.value })}
-              >
-                <option value="">Seleccione un método</option>
-                <option value="START">START</option>
-                <option value="JumpStart">JumpStart</option>
-                <option value="META">META</option>
-                <option value="Manchester">Manchester</option>
-                <option value="Triage IMSS">Triage IMSS</option>
-                <option value="Triage ISSSTE">Triage ISSSTE</option>
-              </select>
-
+            <div className="card">
               <h3>Nivel de triage</h3>
               <select
                 value={triage.nivel_triage}
