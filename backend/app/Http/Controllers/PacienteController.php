@@ -91,7 +91,6 @@ class PacienteController extends Controller
                 't.id_triage',
                 'p.id_paciente',
                 'p.nombre_completo',
-                'p.edad_meses',
                 'p.edad_estimada',
                 'p.sexo',
 
