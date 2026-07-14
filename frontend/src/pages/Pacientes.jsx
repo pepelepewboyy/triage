@@ -184,8 +184,9 @@ function Pacientes() {
                     <th>Nombre</th>
                     <th>Edad</th>
                     <th>Sexo</th>
-                    <th>Nivel</th>
                     <th>Síntomas</th>
+                    <th>Método</th>
+                    <th>Prioridad</th>
                     <th>Habitación</th>
                     <th>Acciones</th>
                   </tr>
@@ -204,10 +205,11 @@ function Pacientes() {
                         <td>{paciente.id_triage}</td>
                         <td>{paciente.id_paciente}</td>
                         <td>{paciente.nombre_completo}</td>
-                        <td>{paciente.edad}</td>
+                        <td>{paciente.edad_estimada}</td>
                         <td>{paciente.sexo}</td>
-                        <td>{paciente.nivel_evaluacion}</td>
                         <td>{paciente.sintomas}</td>
+                        <td>{paciente.metodo_codigo}</td>
+                        <td>{paciente.prioridad}</td>
                         <td>{paciente.habitacion}</td>
                         <td className="acciones">
                           <div className="acciones-contenedor">
@@ -275,7 +277,7 @@ function Pacientes() {
                 <input
                   type="text"
                   name="edad"
-                  value={pacienteEditando.edad || ""}
+                  value={pacienteEditando.edad_estimada || ""}
                   onChange={handleChange}
                 />
               </div>
@@ -335,7 +337,7 @@ function Pacientes() {
                 <label>Nivel de urgencia</label>
                 <select
                   name="nivel_evaluacion"
-                  value={pacienteEditando.nivel_evaluacion || ""}
+                  value={pacienteEditando.estado || ""}
                   onChange={handleChange}
                 >
                   <option>ROJO</option>
@@ -344,55 +346,6 @@ function Pacientes() {
                   <option>VERDE</option>
                   <option>AZUL</option>
                 </select>
-              </div>
-
-              <div>
-                <label>Temperatura</label>
-                <input
-                  type="text"
-                  name="temperatura"
-                  value={pacienteEditando.temperatura || ""}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div>
-                <label>Presión arterial</label>
-                <input
-                  type="text"
-                  name="presion_arterial"
-                  value={pacienteEditando.presion_arterial || ""}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div>
-                <label>Frecuencia cardíaca</label>
-                <input
-                  type="text"
-                  name="frecuencia_cardiaca"
-                  value={pacienteEditando.frecuencia_cardiaca || ""}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div>
-                <label>Habitación</label>
-                <input
-                  type="text"
-                  name="habitacion"
-                  value={pacienteEditando.habitacion || ""}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="full">
-                <label>Síntomas / Historia clínica</label>
-                <textarea
-                  name="sintomas"
-                  value={pacienteEditando.sintomas || ""}
-                  onChange={handleChange}
-                />
               </div>
 
               <div className="full btn_guardar">

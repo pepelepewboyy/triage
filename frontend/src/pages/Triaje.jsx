@@ -12,27 +12,63 @@ const INSTITUCIONES = [
 
 const CAMPOS_POR_INSTITUCION = {
   IMSS: [
-    { key: "signos_vitales", label: "Signos vitales", type: "text" },
-    { key: "acciones_diagnosticas", label: "Acciones diagnósticas", type: "textarea" },
-    { key: "alto_riesgo", label: "¿Alto riesgo?", type: "select", options: ["Sí", "No"] },
-    { key: "reanimacion_inmediata", label: "¿Reanimación inmediata?", type: "select", options: ["Sí", "No"] },
+    {
+      key: "reanimacion_inmediata",
+      label: "¿Reanimación inmediata?",
+      type: "select",
+      options: ["Sí", "No"],
+    },
+    {
+      key: "alto_riesgo",
+      label:
+        "¿Alto riesgo, deterioro neurológico agudo o dificultad respiratoria severa?",
+      type: "select",
+      options: ["Sí", "No"],
+    },
+    {
+      key: "acciones_diagnosticas",
+      label: "Acciones diagnósticas",
+      type: "select",
+      options: ["0", "1", "Varias"],
+    },
+    { key: "frecuencia_cardiaca", label: "Frecuencia cardiaca", type: "text" },
+    {
+      key: "frecuencia_respiratoria",
+      label: "Frecuencia respiratoria",
+      type: "text",
+    },
+    { key: "saturacion_oxigeno", label: "Saturación de oxigeno", type: "text" },
   ],
   ISSSTE: [
     { key: "frecuencia_cardiaca", label: "Frecuencia cardíaca", type: "text" },
-    { key: "frecuencia_respiratoria", label: "Frecuencia respiratoria", type: "text" },
+    {
+      key: "frecuencia_respiratoria",
+      label: "Frecuencia respiratoria",
+      type: "text",
+    },
+    { key: "escala_glasgow", label: "Escala de Glasgow", type: "text" },
     { key: "glucosa_capilar", label: "Glucosa capilar", type: "text" },
     { key: "presion_arterial", label: "Presión arterial", type: "text" },
     { key: "saturacion_oxigeno", label: "Saturación de oxígeno", type: "text" },
     { key: "temperatura", label: "Temperatura", type: "text" },
-    { key: "escala_glasgow", label: "Escala de Glasgow", type: "text" },
   ],
   "Cruz Roja": [
-    { key: "deambulacion", label: "Deambulación", type: "select", options: ["Camina", "No camina"] },
+    {
+      key: "deambulacion",
+      label: "Deambulación",
+      type: "select",
+      options: ["Camina", "No camina"],
+    },
     {
       key: "respiracion",
       label: "Respiración",
       type: "select",
       options: ["Ausente", "Presente < 30/min", "Presente > 30/min"],
+    },
+    {
+      key: "frecuencia_respiratoria",
+      label: "Frecuencia respiratoria",
+      type: "number",
     },
     {
       key: "perfusion",
@@ -102,7 +138,9 @@ export default function Triage() {
         });
         Swal.fire({
           title: "Paciente insertado con éxito",
-          text: "Paciente registrado correctamente con ID " + response.data.id_paciente,
+          text:
+            "Paciente registrado correctamente con ID " +
+            response.data.id_paciente,
           icon: "success",
         });
         setIdPaciente(response.data.id_paciente);
@@ -158,14 +196,15 @@ export default function Triage() {
         sintomas: triage.sintomas,
         metodo: institucion,
         datos_metodo: datosMetodo,
-        nivel: triage.nivel_triage,
+        nivel_triage: triage.nivel_triage,
         comentario: triage.comentario,
         id_persona: usuario.id_persona,
         id_paciente: idPaciente,
       });
       Swal.fire({
         title: "Paciente insertado con éxito",
-        text: "Triage registrado correctamente con ID " + response.data.id_triage,
+        text:
+          "Triage registrado correctamente con ID " + response.data.id_triage,
         icon: "success",
       });
       setTimeout(() => {
@@ -197,10 +236,13 @@ export default function Triage() {
 
       <div className="main">
         <header className="topbar">
-          <button className="hamburger" onClick={() => setSidebarOpen(!sidebarOpen)}>
+          <button
+            className="hamburger"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
             <i className="fa-solid fa-bars"></i>
           </button>
-          <h3>Triaje</h3>
+          <h3>Triage</h3>
           <div className="user">¡Hola! {usuario?.nombre}</div>
         </header>
 
@@ -267,21 +309,28 @@ export default function Triage() {
                     type="text"
                     placeholder="Nombre"
                     value={paciente.nombre}
-                    onChange={(e) => setPaciente({ ...paciente, nombre: e.target.value })}
+                    onChange={(e) =>
+                      setPaciente({ ...paciente, nombre: e.target.value })
+                    }
                   />
 
                   <input
                     type="text"
                     placeholder="Apellido"
                     value={paciente.apellido}
-                    onChange={(e) => setPaciente({ ...paciente, apellido: e.target.value })}
+                    onChange={(e) =>
+                      setPaciente({ ...paciente, apellido: e.target.value })
+                    }
                   />
 
                   <input
                     type="date"
                     value={paciente.fecha_nacimiento}
                     onChange={(e) =>
-                      setPaciente({ ...paciente, fecha_nacimiento: e.target.value })
+                      setPaciente({
+                        ...paciente,
+                        fecha_nacimiento: e.target.value,
+                      })
                     }
                   />
 
@@ -289,12 +338,16 @@ export default function Triage() {
                     type="text"
                     placeholder="Edad"
                     value={paciente.edad}
-                    onChange={(e) => setPaciente({ ...paciente, edad: e.target.value })}
+                    onChange={(e) =>
+                      setPaciente({ ...paciente, edad: e.target.value })
+                    }
                   />
 
                   <select
                     value={paciente.sexo}
-                    onChange={(e) => setPaciente({ ...paciente, sexo: e.target.value })}
+                    onChange={(e) =>
+                      setPaciente({ ...paciente, sexo: e.target.value })
+                    }
                   >
                     <option value="Masculino">Masculino</option>
                     <option value="Femenino">Femenino</option>
@@ -304,14 +357,18 @@ export default function Triage() {
                     type="number"
                     placeholder="NSS"
                     value={paciente.nss}
-                    onChange={(e) => setPaciente({ ...paciente, nss: e.target.value })}
+                    onChange={(e) =>
+                      setPaciente({ ...paciente, nss: e.target.value })
+                    }
                   />
 
                   <label className="label-select">Tipo de sangre</label>
 
                   <select
                     value={paciente.tipo_sangre}
-                    onChange={(e) => setPaciente({ ...paciente, tipo_sangre: e.target.value })}
+                    onChange={(e) =>
+                      setPaciente({ ...paciente, tipo_sangre: e.target.value })
+                    }
                   >
                     <option>O+</option>
                     <option>O-</option>
@@ -369,7 +426,9 @@ export default function Triage() {
                 {campo.type === "select" ? (
                   <select
                     value={datosMetodo[campo.key] || ""}
-                    onChange={(e) => handleCampoChange(campo.key, e.target.value)}
+                    onChange={(e) =>
+                      handleCampoChange(campo.key, e.target.value)
+                    }
                   >
                     <option value="">Seleccione</option>
                     {campo.options.map((opt) => (
@@ -382,34 +441,31 @@ export default function Triage() {
                   <textarea
                     rows="4"
                     value={datosMetodo[campo.key] || ""}
-                    onChange={(e) => handleCampoChange(campo.key, e.target.value)}
+                    onChange={(e) =>
+                      handleCampoChange(campo.key, e.target.value)
+                    }
                   />
                 ) : (
                   <input
-                    type="text"
+                    type={campo.type}
                     value={datosMetodo[campo.key] || ""}
-                    onChange={(e) => handleCampoChange(campo.key, e.target.value)}
+                    onChange={(e) =>
+                      handleCampoChange(campo.key, e.target.value)
+                    }
                   />
                 )}
               </div>
             ))}
 
-            <div className="card sintomas">
-              <h3>Síntomas e historia clínica</h3>
-              <textarea
-                rows="8"
-                value={triage.sintomas}
-                onChange={(e) => setTriage({ ...triage, sintomas: e.target.value })}
-                required
-              />
-            </div>
 
-            <div className="card">
+            <div className="card sintomas">
               <h3>Comentarios</h3>
               <textarea
                 rows="8"
                 value={triage.comentario}
-                onChange={(e) => setTriage({ ...triage, comentario: e.target.value })}
+                onChange={(e) =>
+                  setTriage({ ...triage, comentario: e.target.value })
+                }
               />
             </div>
 
@@ -417,7 +473,9 @@ export default function Triage() {
               <h3>Nivel de triage</h3>
               <select
                 value={triage.nivel_triage}
-                onChange={(e) => setTriage({ ...triage, nivel_triage: e.target.value })}
+                onChange={(e) =>
+                  setTriage({ ...triage, nivel_triage: e.target.value })
+                }
               >
                 <option value="">Seleccione nivel</option>
                 <option value="rojo">Rojo - Emergencia</option>
@@ -426,18 +484,24 @@ export default function Triage() {
                 <option value="verde">Verde - Poco urgente</option>
                 <option value="azul">Azul - No urgente</option>
               </select>
-            </div>
-
-            <div className="card botones">
-              <button type="button" className="btn btn-guardar" onClick={insertarTriage}>
+              <button
+                type="button"
+                className="btn btn-guardar"
+                onClick={insertarTriage}
+              >
                 <i className="fa-solid fa-floppy-disk"></i>
                 Guardar evaluación
               </button>
-              <button type="button" className="btn btn-ia" onClick={insertarTriage}>
+              <button
+                type="button"
+                className="btn btn-ia"
+                onClick={insertarTriage}
+              >
                 <i className="fa-solid fa-wand-magic-sparkles"></i>
                 IA Evaluación
               </button>
             </div>
+
           </form>
         </div>
       </div>

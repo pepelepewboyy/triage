@@ -142,6 +142,8 @@ button {
 
 .tab-con {
     overflow-x: auto;
+    overflow-y: auto;
+    height: 70vh;
     width: 100%;
 }
 
