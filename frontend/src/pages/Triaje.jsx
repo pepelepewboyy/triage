@@ -90,13 +90,13 @@ export default function Triage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const [paciente, setPaciente] = useState({
-    nombre: "",
-    apellido: "",
+    nombre_completo: "",
     fecha_nacimiento: "",
-    edad: "",
+    edad_estimada: "",
     sexo: "Masculino",
     nss: "",
-    tipo_sangre: "O+",
+    tipo_sangre: "DESCONOCIDO",
+    donador_organos: "NO",
   });
 
   const [buscarPaciente, setBuscarPaciente] = useState("");
@@ -129,12 +129,13 @@ export default function Triage() {
     try {
       if (tipoPaciente === "nuevo") {
         const response = await api.post("/pacientes", {
-          nombre_completo: `${paciente.nombre} ${paciente.apellido}`,
+          nombre_completo: paciente.nombre,
           fecha_nacimiento: paciente.fecha_nacimiento,
-          edad: paciente.edad,
+          edad_estimada: paciente.edad,
           sexo: paciente.sexo,
           nss: paciente.nss,
           tipo_sangre: paciente.tipo_sangre,
+          donador_organos: paciente.donador_organos,
         });
         Swal.fire({
           title: "Paciente insertado con éxito",
@@ -273,7 +274,7 @@ export default function Triage() {
                 <div id="busquedaPaciente">
                   <input
                     type="text"
-                    placeholder="Buscar por NSS o nombre"
+                    placeholder="Buscar por ID, NSS o nombre"
                     value={buscarPaciente}
                     onChange={(e) => setBuscarPaciente(e.target.value)}
                   />
@@ -307,19 +308,10 @@ export default function Triage() {
                 <div id="nuevoPaciente">
                   <input
                     type="text"
-                    placeholder="Nombre"
+                    placeholder="Nombre completo"
                     value={paciente.nombre}
                     onChange={(e) =>
                       setPaciente({ ...paciente, nombre: e.target.value })
-                    }
-                  />
-
-                  <input
-                    type="text"
-                    placeholder="Apellido"
-                    value={paciente.apellido}
-                    onChange={(e) =>
-                      setPaciente({ ...paciente, apellido: e.target.value })
                     }
                   />
 
@@ -336,7 +328,7 @@ export default function Triage() {
 
                   <input
                     type="text"
-                    placeholder="Edad"
+                    placeholder="Edad estimada"
                     value={paciente.edad}
                     onChange={(e) =>
                       setPaciente({ ...paciente, edad: e.target.value })
@@ -379,6 +371,20 @@ export default function Triage() {
                     <option>AB+</option>
                     <option>AB-</option>
                     <option>DESCONOCIDO</option>
+                  </select>
+                  <label className="label-select">Donador de organos</label>
+
+                  <select
+                    value={paciente.donador_organos}
+                    onChange={(e) =>
+                      setPaciente({
+                        ...paciente,
+                        donador_organos: e.target.value,
+                      })
+                    }
+                  >
+                    <option>SI</option>
+                    <option>NO</option>
                   </select>
                 </div>
               )}
@@ -456,9 +462,17 @@ export default function Triage() {
                 )}
               </div>
             ))}
-
-
             <div className="card sintomas">
+              <h3>Síntomas e historia clínica</h3>
+              <textarea
+                rows="8"
+                value={triage.sintomas}
+                onChange={(e) => setTriage({ ...triage, sintomas: e.target.value })}
+                required
+              />
+            </div>
+
+            <div className="card">
               <h3>Comentarios</h3>
               <textarea
                 rows="8"
@@ -484,24 +498,17 @@ export default function Triage() {
                 <option value="verde">Verde - Poco urgente</option>
                 <option value="azul">Azul - No urgente</option>
               </select>
-              <button
-                type="button"
-                className="btn btn-guardar"
-                onClick={insertarTriage}
-              >
+            </div>
+                        <div className="card botones">
+              <button type="button" className="btn btn-guardar" onClick={insertarTriage}>
                 <i className="fa-solid fa-floppy-disk"></i>
                 Guardar evaluación
               </button>
-              <button
-                type="button"
-                className="btn btn-ia"
-                onClick={insertarTriage}
-              >
+              <button type="button" className="btn btn-ia" onClick={insertarTriage}>
                 <i className="fa-solid fa-wand-magic-sparkles"></i>
                 IA Evaluación
               </button>
             </div>
-
           </form>
         </div>
       </div>
