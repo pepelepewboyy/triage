@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+
 use Illuminate\Http\Request;
 use App\Service\OllamaService;
 use Illuminate\Support\Facades\DB;
@@ -12,7 +13,7 @@ class TriageController extends Controller
     |--------------------------------------------------------------------------
     | CLASIFICACIÓN TRIAGE - OLLAMA
     |--------------------------------------------------------------------------
-    */
+    
     public function clasificarTriage(
         Request $request,
         OllamaService $ollama
@@ -46,7 +47,8 @@ class TriageController extends Controller
         return response()->json($resultado);
 
 
-    }
+    }*/
+        
     /*
     |--------------------------------------------------------------------------
     | INSERTAR TRIAGE
