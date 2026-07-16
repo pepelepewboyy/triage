@@ -14,10 +14,10 @@ class DashboardController extends Controller
             ->join('niveles_triage as n', 't.fk_nivel', '=', 'n.id_nivel')
             ->join('metodos_triage as m', 't.fk_metodo', '=', 'm.id_metodo')
             ->select(
-                't.id_triage as id',
+                'p.id_paciente as id',
                 'n.color as color',
                 'p.nombre_completo as nombre_completo',
-                'p.edad_meses as edad_meses',
+                'p.fecha_nacimiento as fecha_nacimiento',
                 'p.edad_estimada as edad_estimada',
                 'm.nombre as metodo',
                 't.sintomas as motivo',
@@ -30,23 +30,26 @@ class DashboardController extends Controller
             ->orderBy('t.fecha_triage')
             ->get()
             ->map(function ($item) {
-
-                // Edad en años a partir de edad_meses; si no hay dato, null
-                $item->edad = $item->edad_meses !== null
-                    ? intdiv($item->edad_meses, 12)
-                    : null;
-
-                unset($item->edad_meses);
-
+ 
+                // Si hay fecha de nacimiento, se calcula la edad exacta.
+                // Si no, se usa el texto libre de edad_estimada tal cual
+                // (ej. "APROX 30 AÑOS"), que es lo único que hay en ese caso.
+                if (!empty($item->fecha_nacimiento)) {
+                    $item->edad = Carbon::parse($item->fecha_nacimiento)->age;
+                } else {
+                    $item->edad = null;
+                }
+ 
+                unset($item->fecha_nacimiento);
+ 
                 // Tiempo de espera desde que se registró el triage
                 $ingreso = Carbon::parse($item->ingreso);
-
+ 
                 $item->espera = $ingreso->diffForHumans([
                     'parts' => 2,
                     'short' => true,
                     'syntax' => Carbon::DIFF_RELATIVE_TO_NOW,
                 ]);
-
                 return $item;
             });
 

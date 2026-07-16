@@ -352,7 +352,8 @@ class PacienteController extends Controller
             ->where('estado', 'Activo')
             ->where(function ($query) use ($busqueda) {
                 $query->where('nombre_completo', 'like', "%{$busqueda}%")
-                      ->orWhere('nss', 'like', "%{$busqueda}%");
+                      ->orWhere('nss', 'like', "%{$busqueda}%")
+                      ->orWhere('id_paciente','like',"%{$busqueda}%");
             })
             ->get();
     }

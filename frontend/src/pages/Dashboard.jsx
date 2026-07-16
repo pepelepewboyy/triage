@@ -31,6 +31,7 @@ function Dashboard() {
   }, [navigate]);
 
   const verPaciente = (id) => {
+    alert(id)
     localStorage.setItem("idPaciente", id);
     navigate(`/seguimiento/${id}`);
   };
@@ -51,7 +52,6 @@ function Dashboard() {
           <h3>Dashboard</h3>
           <div className="user">¡Hola! {usuario.nombre}</div>
         </div>
-        {/* resto igual */}
 
         <div className="table-container">
           <h3>Pacientes urgentes</h3>

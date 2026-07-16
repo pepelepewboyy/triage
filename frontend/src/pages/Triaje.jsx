@@ -10,6 +10,34 @@ const INSTITUCIONES = [
   { key: "Cruz Roja", label: "Cruz Roja / START" },
 ];
 
+
+const MAPA_METODOS = {
+  IMSS: 1,
+  ISSSTE: 2,
+  "Cruz Roja": 3,
+};
+
+const NIVELES_POR_METODO = {
+  IMSS: [
+    { id: 1, label: "Nivel 1 - Rojo" },
+    { id: 2, label: "Nivel 2 - Naranja" },
+    { id: 3, label: "Nivel 3 - Amarillo" },
+    { id: 4, label: "Nivel 4 - Verde" },
+    { id: 5, label: "Nivel 5 - Azul" },
+  ],
+  ISSSTE: [
+    { id: 6, label: "Prioridad I - Rojo" },
+    { id: 7, label: "Prioridad II - Amarillo" },
+    { id: 8, label: "Prioridad III - Verde" },
+  ],
+  "Cruz Roja": [
+    { id: 9, label: "Inmediato (Rojo)" },
+    { id: 10, label: "Diferido (Amarillo)" },
+    { id: 11, label: "Menor (Verde)" },
+    { id: 12, label: "Fallecido / Expectante (Negro)" },
+  ],
+};
+
 const CAMPOS_POR_INSTITUCION = {
   IMSS: [
     {
@@ -48,7 +76,11 @@ const CAMPOS_POR_INSTITUCION = {
     },
     { key: "escala_glasgow", label: "Escala de Glasgow", type: "text" },
     { key: "glucosa_capilar", label: "Glucosa capilar", type: "text" },
-    { key: "presion_arterial", label: "Presión arterial", type: "text" },
+    {
+      key: "presion_arterial",
+      label: "Presión arterial (formato: sistólica/diastólica, ej. 120/80)",
+      type: "text",
+    },
     { key: "saturacion_oxigeno", label: "Saturación de oxígeno", type: "text" },
     { key: "temperatura", label: "Temperatura", type: "text" },
   ],
@@ -85,11 +117,69 @@ const CAMPOS_POR_INSTITUCION = {
   ],
 };
 
+
+function construirDatosMetodo(institucion, datos) {
+  switch (institucion) {
+    case "IMSS": {
+      let numAcciones = null;
+      if (datos.acciones_diagnosticas === "0") numAcciones = "Ninguna";
+      else if (datos.acciones_diagnosticas === "1") numAcciones = "Una";
+      else if (datos.acciones_diagnosticas === "Varias") numAcciones = "Varias";
+
+      return {
+        requiere_reanimacion: datos.reanimacion_inmediata === "Sí" ? 1 : 0,
+        alto_riesgo: datos.alto_riesgo === "Sí" ? 1 : 0,
+        deterioro_neurologico_agudo: 0,
+        dolor_severo: 0,
+        dificultad_respiratoria_severa: 0,
+        num_acciones_dx_tx: numAcciones,
+        frecuencia_cardiaca: datos.frecuencia_cardiaca || null,
+        frecuencia_respiratoria: datos.frecuencia_respiratoria || null,
+        saturacion_oxigeno: datos.saturacion_oxigeno || null,
+      };
+    }
+
+    case "ISSSTE": {
+      const partes = (datos.presion_arterial || "").split("/");
+      const sistolica = partes[0]?.trim() || null;
+      const diastolica = partes[1]?.trim() || null;
+
+      return {
+        glasgow: datos.escala_glasgow || null,
+        presion_sistolica: sistolica,
+        presion_diastolica: diastolica,
+        frecuencia_cardiaca: datos.frecuencia_cardiaca || null,
+        frecuencia_respiratoria: datos.frecuencia_respiratoria || null,
+        temperatura: datos.temperatura || null,
+        saturacion_oxigeno: datos.saturacion_oxigeno || null,
+        glucosa_capilar: datos.glucosa_capilar || null,
+      };
+    }
+
+    case "Cruz Roja": {
+      return {
+        tipo_paciente: "Adulto",
+        deambula: datos.deambulacion === "Camina" ? 1 : 0,
+        respira: datos.respiracion === "Ausente" ? 0 : 1,
+        frecuencia_respiratoria: datos.frecuencia_respiratoria || null,
+        perfusion_alterada:
+          datos.perfusion === "Llenado capilar > 2s / pulso ausente" ? 1 : 0,
+        estado_mental_alterado:
+          datos.estado_mental === "No obedece órdenes" ? 1 : 0,
+      };
+    }
+
+    default:
+      return {};
+  }
+}
+
 export default function Triage() {
   const [tipoPaciente, setTipoPaciente] = useState("existente");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const [paciente, setPaciente] = useState({
+    id_paciente:"",
     nombre_completo: "",
     fecha_nacimiento: "",
     edad_estimada: "",
@@ -117,6 +207,10 @@ export default function Triage() {
   const seleccionarInstitucion = (inst) => {
     setInstitucion(inst);
     setDatosMetodo({});
+    // El nivel seleccionado pertenece al método anterior; se limpia para
+    // que el usuario no envíe, por ejemplo, un id_nivel de IMSS mientras
+    // el fk_metodo ya apunta a ISSSTE.
+    setTriage((prev) => ({ ...prev, nivel_triage: "" }));
   };
 
   const handleCampoChange = (key, value) => {
@@ -129,9 +223,9 @@ export default function Triage() {
     try {
       if (tipoPaciente === "nuevo") {
         const response = await api.post("/pacientes", {
-          nombre_completo: paciente.nombre,
+          nombre_completo: paciente.nombre_completo,
           fecha_nacimiento: paciente.fecha_nacimiento,
-          edad_estimada: paciente.edad,
+          edad_estimada: paciente.edad_estimada,
           sexo: paciente.sexo,
           nss: paciente.nss,
           tipo_sangre: paciente.tipo_sangre,
@@ -144,6 +238,7 @@ export default function Triage() {
             response.data.id_paciente,
           icon: "success",
         });
+        console.log(response.data.id_paciente)
         setIdPaciente(response.data.id_paciente);
       } else {
         if (!buscarPaciente.trim()) {
@@ -194,14 +289,16 @@ export default function Triage() {
 
     try {
       const response = await api.post("/triage", {
+        fk_metodo: MAPA_METODOS[institucion],
+        fk_nivel: Number(triage.nivel_triage),
         sintomas: triage.sintomas,
-        metodo: institucion,
-        datos_metodo: datosMetodo,
-        nivel_triage: triage.nivel_triage,
-        comentario: triage.comentario,
+        comentarios: triage.comentario,
         id_persona: usuario.id_persona,
         id_paciente: idPaciente,
+
+        ...construirDatosMetodo(institucion, datosMetodo),
       });
+
       Swal.fire({
         title: "Paciente insertado con éxito",
         text:
@@ -212,24 +309,21 @@ export default function Triage() {
         window.location.reload();
       }, 1000);
     } catch (error) {
-      if (error.response?.status === 409) {
-        Swal.fire({
-          icon: "error",
-          title: "Oops...",
-          text: error.response.data.message,
-        });
-      } else {
-        Swal.fire({
-          icon: "error",
-          title: "Oops...",
-          text: "Error al registrar el triage",
-        });
-      }
-      console.error(error);
+      const mensajeBackend =
+        error.response?.data?.message || "Error al registrar el triage";
+
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: mensajeBackend,
+      });
+
+      console.error(error.response?.data || error);
     }
   };
 
   const camposActivos = CAMPOS_POR_INSTITUCION[institucion] || [];
+  const nivelesActivos = NIVELES_POR_METODO[institucion] || [];
 
   return (
     <div className="dashboard-container">
@@ -309,9 +403,12 @@ export default function Triage() {
                   <input
                     type="text"
                     placeholder="Nombre completo"
-                    value={paciente.nombre}
+                    value={paciente.nombre_completo}
                     onChange={(e) =>
-                      setPaciente({ ...paciente, nombre: e.target.value })
+                      setPaciente({
+                        ...paciente,
+                        nombre_completo: e.target.value,
+                      })
                     }
                   />
 
@@ -329,9 +426,12 @@ export default function Triage() {
                   <input
                     type="text"
                     placeholder="Edad estimada"
-                    value={paciente.edad}
+                    value={paciente.edad_estimada}
                     onChange={(e) =>
-                      setPaciente({ ...paciente, edad: e.target.value })
+                      setPaciente({
+                        ...paciente,
+                        edad_estimada: e.target.value,
+                      })
                     }
                   />
 
@@ -467,7 +567,9 @@ export default function Triage() {
               <textarea
                 rows="8"
                 value={triage.sintomas}
-                onChange={(e) => setTriage({ ...triage, sintomas: e.target.value })}
+                onChange={(e) =>
+                  setTriage({ ...triage, sintomas: e.target.value })
+                }
                 required
               />
             </div>
@@ -490,21 +592,34 @@ export default function Triage() {
                 onChange={(e) =>
                   setTriage({ ...triage, nivel_triage: e.target.value })
                 }
+                disabled={!institucion}
               >
-                <option value="">Seleccione nivel</option>
-                <option value="rojo">Rojo - Emergencia</option>
-                <option value="naranja">Naranja - Muy urgente</option>
-                <option value="amarillo">Amarillo - Urgente</option>
-                <option value="verde">Verde - Poco urgente</option>
-                <option value="azul">Azul - No urgente</option>
+                <option value="">
+                  {institucion
+                    ? "Seleccione nivel"
+                    : "Primero selecciona una institución"}
+                </option>
+                {nivelesActivos.map((n) => (
+                  <option key={n.id} value={n.id}>
+                    {n.label}
+                  </option>
+                ))}
               </select>
             </div>
-                        <div className="card botones">
-              <button type="button" className="btn btn-guardar" onClick={insertarTriage}>
+            <div className="card botones">
+              <button
+                type="button"
+                className="btn btn-guardar"
+                onClick={insertarTriage}
+              >
                 <i className="fa-solid fa-floppy-disk"></i>
                 Guardar evaluación
               </button>
-              <button type="button" className="btn btn-ia" onClick={insertarTriage}>
+              <button
+                type="button"
+                className="btn btn-ia"
+                onClick={insertarTriage}
+              >
                 <i className="fa-solid fa-wand-magic-sparkles"></i>
                 IA Evaluación
               </button>
