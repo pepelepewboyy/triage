@@ -125,6 +125,15 @@ class PersonaController extends Controller
 
         try {
 
+            $existe = DB::table('persona')->where('id_persona', $id)->exists();
+
+            if (!$existe) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Usuario no encontrado'
+                ], 404);
+            }
+
             $datos = [
                 'nombre' => $request->nombre,
                 'apellidos' => $request->apellidos,
@@ -136,16 +145,9 @@ class PersonaController extends Controller
                 $datos['password'] = Hash::make($request->password, ['rounds' => 12]);
             }
 
-            $actualizado = DB::table('persona')
+            DB::table('persona')
                 ->where('id_persona', $id)
                 ->update($datos);
-
-            if (!$actualizado) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Usuario no encontrado o sin cambios'
-                ], 404);
-            }
 
             return response()->json([
                 'success' => true,
