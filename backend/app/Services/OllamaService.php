@@ -6,22 +6,32 @@ use Illuminate\Support\Facades\Http;
 
 class OllamaService
 {
-    public function analizar($prompt)
+    public function analizar(string $prompt)
     {
-        $response = Http::withoutVerifying()
-            ->withToken(env('OLLAMA_API_KEY'))
-            ->post('https://ollama.com/api/chat', [
+        $response = Http::post(
+            env('OLLAMA_URL').'/api/chat',
+            [
                 'model' => env('OLLAMA_MODEL'),
-                'messages' => [
+                'messages' =>[
                     [
-                        'role' => 'user',
-                        'content' => $prompt
+                        'role' => 'system',
+                        'content'=>'Eres un experto en triage hospitalario. Utiliza Unicamente el protocolo proporcionado'
+                    ],
+                    [
+                        'role'=>'user',
+                        'content'=>$prompt
                     ]
                 ],
-                'stream' => false
-            ]);
-        
-        return $response -> json();
+                'stream'=>false
+            ]
+        );
+
+        if(!$response->successful()){
+            throw new \Exception(
+                'Ollama error: '.$response->body()
+            );
+        }
+        return $response -> json()['message']['content'];
 
     }
 }

@@ -4,9 +4,14 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class PersonaController extends Controller
 {
+    // Roles válidos según el ENUM de la tabla `persona`
+    private const ROLES_VALIDOS = ['Medico(a)', 'Paramedico(a)', 'Enfermero(a)', 'Admin'];
+
     /*
     |--------------------------------------------------------------------------
     | LISTAR USUARIOS
@@ -15,6 +20,7 @@ class PersonaController extends Controller
     public function index()
     {
         $usuarios = DB::table('persona')
+            ->select('id_persona', 'nombre', 'apellidos', 'rol', 'usuario', 'estado', 'fecha_creacion')
             ->where('estado', 'Activo')
             ->orderBy('nombre')
             ->get();
@@ -30,16 +36,21 @@ class PersonaController extends Controller
     public function show($id)
     {
         $usuario = DB::table('persona')
+            ->select('id_persona', 'nombre', 'apellidos', 'rol', 'usuario', 'estado', 'fecha_creacion')
             ->where('id_persona', $id)
             ->first();
 
         if (!$usuario) {
             return response()->json([
+                'success' => false,
                 'message' => 'Usuario no encontrado'
             ], 404);
         }
 
-        return response()->json($usuario);
+        return response()->json([
+            'success' => true,
+            'usuario' => $usuario
+        ]);
     }
 
     /*
@@ -49,47 +60,107 @@ class PersonaController extends Controller
     */
     public function store(Request $request)
     {
-        $id = DB::table('persona')->insertGetId([
-            'nombre'     => $request->nombre,
-            'apellidos'  => $request->apellidos,
-            'rol'        => $request->rol,
-            'usuario'    => $request->usuario,
-            'password'   => bcrypt($request->password),
-            'estado'     => 'Activo'
+        $validator = Validator::make($request->all(), [
+            'nombre' => 'required|string|max:50',
+            'apellidos' => 'required|string|max:50',
+            'rol' => 'required|in:' . implode(',', self::ROLES_VALIDOS),
+            'usuario' => 'required|string|max:30|unique:persona,usuario',
+            'password' => 'required|string|min:6',
         ]);
 
-        return response()->json([
-            'message' => 'Usuario agregado correctamente',
-            'id_persona' => $id
-        ], 201);
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first()
+            ], 422);
+        }
+
+        try {
+
+            $id = DB::table('persona')->insertGetId([
+                'nombre' => $request->nombre,
+                'apellidos' => $request->apellidos,
+                'rol' => $request->rol,
+                'usuario' => $request->usuario,
+                'password' => Hash::make($request->password, ['rounds' => 12]),
+                'estado' => 'Activo'
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Usuario agregado correctamente',
+                'id_persona' => $id
+            ], 201);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /*
     |--------------------------------------------------------------------------
     | ACTUALIZAR USUARIO
     |--------------------------------------------------------------------------
-
     */
     public function update(Request $request, $id)
     {
-        $datos = [
-            'nombre'    => $request->nombre,
-            'apellidos' => $request->apellidos,
-            'rol'       => $request->rol,
-            'usuario'   => $request->usuario,
-        ];
+        $validator = Validator::make($request->all(), [
+            'nombre' => 'required|string|max:50',
+            'apellidos' => 'required|string|max:50',
+            'rol' => 'required|in:' . implode(',', self::ROLES_VALIDOS),
+            'usuario' => 'required|string|max:30|unique:persona,usuario,' . $id . ',id_persona',
+            'password' => 'nullable|string|min:6',
+        ]);
 
-        if (!empty($request->password)) {
-            $datos['password'] = bcrypt($request->password);
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => $validator->errors()->first()
+            ], 422);
         }
 
-        DB::table('persona')
-            ->where('id_persona', $id)
-            ->update($datos);
+        try {
 
-        return response()->json([
-            'message' => 'Usuario actualizado correctamente'
-        ]);
+            $existe = DB::table('persona')->where('id_persona', $id)->exists();
+
+            if (!$existe) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Usuario no encontrado'
+                ], 404);
+            }
+
+            $datos = [
+                'nombre' => $request->nombre,
+                'apellidos' => $request->apellidos,
+                'rol' => $request->rol,
+                'usuario' => $request->usuario,
+            ];
+
+            if (!empty($request->password)) {
+                $datos['password'] = Hash::make($request->password, ['rounds' => 12]);
+            }
+
+            DB::table('persona')
+                ->where('id_persona', $id)
+                ->update($datos);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Usuario actualizado correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /*
@@ -99,14 +170,25 @@ class PersonaController extends Controller
     */
     public function destroy($id)
     {
-        DB::table('persona')
-            ->where('id_persona', $id)
-            ->update([
-                'estado' => 'Inactivo'
+        try {
+
+            DB::table('persona')
+                ->where('id_persona', $id)
+                ->update([
+                    'estado' => 'Inactivo'
+                ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Usuario eliminado correctamente'
             ]);
 
-        return response()->json([
-            'message' => 'Usuario eliminado correctamente'
-        ]);
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }

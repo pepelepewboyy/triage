@@ -16,10 +16,6 @@ class PacienteController extends Controller
     {
         try {
 
-            // Acepta edad_meses directo, o convierte "edad" (años) si es lo
-            // único que manda el formulario mientras se termina de migrar.
-            $edadMeses = $request->edad_meses
-                ?? ($request->edad !== null ? intval($request->edad) * 12 : null);
 
             $id = DB::table('pacientes')
                 ->insertGetId([
@@ -30,11 +26,11 @@ class PacienteController extends Controller
                     'fecha_nacimiento' =>
                         $request->fecha_nacimiento,
 
-                    'edad_meses' =>
-                        $edadMeses,
+                    'edad_estimada' =>
+                        $request->edad_estimada,
 
                     'edad_estimada' =>
-                        $request->edad_estimada ?? (empty($request->fecha_nacimiento) ? 1 : 0),
+                        $request->edad_estimada,
 
                     'sexo' =>
                         $request->sexo,
@@ -43,10 +39,10 @@ class PacienteController extends Controller
                         $request->nss,
 
                     'tipo_sangre' =>
-                        $request->tipo_sangre ?? 'DESCONOCIDO',
+                        $request->tipo_sangre,
 
                     'donador_organos' =>
-                        $request->donador_organos ?? 'NO',
+                        $request->donador_organos,
 
                     'estado' => 'Activo'
                 ]);
@@ -91,7 +87,6 @@ class PacienteController extends Controller
                 't.id_triage',
                 'p.id_paciente',
                 'p.nombre_completo',
-                'p.edad_meses',
                 'p.edad_estimada',
                 'p.sexo',
 
@@ -357,7 +352,8 @@ class PacienteController extends Controller
             ->where('estado', 'Activo')
             ->where(function ($query) use ($busqueda) {
                 $query->where('nombre_completo', 'like', "%{$busqueda}%")
-                      ->orWhere('nss', 'like', "%{$busqueda}%");
+                      ->orWhere('nss', 'like', "%{$busqueda}%")
+                      ->orWhere('id_paciente','like',"%{$busqueda}%");
             })
             ->get();
     }
