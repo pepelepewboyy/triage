@@ -264,8 +264,8 @@ export default function Configuraciones() {
                 <div className="full">
                   <label>Contraseña</label>
                   <input
-                    value={usuarioEdit.psswrd}
-                    onChange={(e) => setUsuarioEdit({ ...usuarioEdit, psswrd: e.target.value })}
+                    value={usuarioEdit.password}
+                    onChange={(e) => setUsuarioEdit({ ...usuarioEdit, password: e.target.value })}
                   />
                 </div>
 
