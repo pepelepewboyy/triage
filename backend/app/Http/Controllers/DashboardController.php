@@ -32,8 +32,6 @@ class DashboardController extends Controller
             ->map(function ($item) {
  
                 // Si hay fecha de nacimiento, se calcula la edad exacta.
-                // Si no, se usa el texto libre de edad_estimada tal cual
-                // (ej. "APROX 30 AÑOS"), que es lo único que hay en ese caso.
                 if (!empty($item->fecha_nacimiento)) {
                     $item->edad = Carbon::parse($item->fecha_nacimiento)->age;
                 } else {

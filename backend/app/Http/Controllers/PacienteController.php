@@ -64,7 +64,7 @@ class PacienteController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | LISTAR PACIENTES (con su triage más reciente)
+    | LISTAR PACIENTES
     |--------------------------------------------------------------------------
     */
     public function index()
@@ -109,23 +109,29 @@ class PacienteController extends Controller
 
     /*
     |--------------------------------------------------------------------------
-    | OBTENER PACIENTE (paciente + triage más reciente + detalle del método)
+    | OBTENER PACIENTE 
     |--------------------------------------------------------------------------
     */
+
+    private const METODO_CODIGO_A_INSTITUCION = [
+        'IGU_IMSS' => 'IMSS',
+        'ISSSTE' => 'ISSSTE',
+        'START_JUMPSTART' => 'Cruz Roja',
+    ];
 
     public function show($id)
     {
         $paciente = DB::table('pacientes')
             ->where('id_paciente', $id)
             ->first();
-
+ 
         if (!$paciente) {
             return response()->json([
                 'success' => false,
                 'message' => 'Paciente no encontrado'
             ], 404);
         }
-
+ 
         $triage = DB::table('triage as t')
             ->join('niveles_triage as n', 'n.id_nivel', '=', 't.fk_nivel')
             ->join('metodos_triage as m', 'm.id_metodo', '=', 't.fk_metodo')
@@ -147,38 +153,120 @@ class PacienteController extends Controller
             ->where('t.estado', 'Activo')
             ->orderByDesc('t.fecha_triage')
             ->first();
-
+ 
         // Cada método guarda sus propios criterios/signos vitales en su
         // tabla de detalle; se consulta la que corresponda.
         $detalle = null;
-
+        $institucion = null;
+        $datosMetodo = null;
+ 
         if ($triage) {
+            $institucion = self::METODO_CODIGO_A_INSTITUCION[$triage->metodo_codigo] ?? null;
+ 
             $detalle = match ($triage->metodo_codigo) {
                 'IGU_IMSS' => DB::table('triage_imss')
                     ->where('fk_triage', $triage->id_triage)
                     ->first(),
-
+ 
                 'ISSSTE' => DB::table('triage_isste as ti')
                     ->leftJoin('patologias_isste as pa', 'pa.id_patologia', '=', 'ti.fk_patologia')
                     ->select('ti.*', 'pa.nombre as patologia')
                     ->where('ti.fk_triage', $triage->id_triage)
                     ->first(),
-
+ 
                 'START_JUMPSTART' => DB::table('triage_start')
                     ->where('fk_triage', $triage->id_triage)
                     ->first(),
-
+ 
                 default => null,
             };
+ 
+            if ($detalle) {
+                $datosMetodo = $this->reconstruirDatosMetodo($triage->metodo_codigo, $detalle);
+            }
         }
-
+ 
         return response()->json([
             'success' => true,
             'paciente' => $paciente,
             'triage' => $triage,
             'detalle' => $detalle,
+            // Listos para usar tal cual en el frontend: setInstitucion(institucion)
+            // y setDatosMetodo(datos_metodo) prellenan el formulario de edición
+            // con las mismas llaves que espera CAMPOS_POR_INSTITUCION.
+            'institucion' => $institucion,
+            'datos_metodo' => $datosMetodo,
         ]);
     }
+ 
+
+    private function reconstruirDatosMetodo(string $metodoCodigo, object $detalle): array
+    {
+        switch ($metodoCodigo) {
+ 
+            case 'IGU_IMSS':
+                $numAcciones = match ($detalle->num_acciones_dx_tx) {
+                    'Ninguna' => '0',
+                    'Una' => '1',
+                    'Varias' => 'Varias',
+                    default => '',
+                };
+ 
+                return [
+                    'reanimacion_inmediata' => $detalle->requiere_reanimacion ? 'Sí' : 'No',
+                    'alto_riesgo' => $detalle->alto_riesgo ? 'Sí' : 'No',
+                    'acciones_diagnosticas' => $numAcciones,
+                    'frecuencia_cardiaca' => $detalle->frecuencia_cardiaca,
+                    'frecuencia_respiratoria' => $detalle->frecuencia_respiratoria,
+                    'saturacion_oxigeno' => $detalle->saturacion_oxigeno,
+                ];
+ 
+            case 'ISSSTE':
+                $presion = null;
+                if ($detalle->presion_sistolica !== null && $detalle->presion_diastolica !== null) {
+                    $presion = $detalle->presion_sistolica . '/' . $detalle->presion_diastolica;
+                }
+ 
+                return [
+                    'escala_glasgow' => $detalle->glasgow,
+                    'presion_arterial' => $presion,
+                    'frecuencia_cardiaca' => $detalle->frecuencia_cardiaca,
+                    'frecuencia_respiratoria' => $detalle->frecuencia_respiratoria,
+                    'temperatura' => $detalle->temperatura,
+                    'saturacion_oxigeno' => $detalle->saturacion_oxigeno,
+                    'glucosa_capilar' => $detalle->glucosa_capilar,
+                ];
+ 
+            case 'START_JUMPSTART':
+                // "respiracion" en la UI distingue 3 estados, pero la BD
+                // solo guarda respira (bool) + frecuencia_respiratoria.
+                // Se reconstruye con el mejor esfuerzo: sin respira = Ausente;
+                // con respira, se usa la FR para decidir < o > 30/min.
+                if (!$detalle->respira) {
+                    $respiracion = 'Ausente';
+                } elseif ($detalle->frecuencia_respiratoria !== null && $detalle->frecuencia_respiratoria > 30) {
+                    $respiracion = 'Presente > 30/min';
+                } else {
+                    $respiracion = 'Presente < 30/min';
+                }
+ 
+                return [
+                    'deambulacion' => $detalle->deambula ? 'Camina' : 'No camina',
+                    'respiracion' => $respiracion,
+                    'frecuencia_respiratoria' => $detalle->frecuencia_respiratoria,
+                    'perfusion' => $detalle->perfusion_alterada
+                        ? 'Llenado capilar > 2s / pulso ausente'
+                        : 'Llenado capilar < 2s',
+                    'estado_mental' => $detalle->estado_mental_alterado
+                        ? 'No obedece órdenes'
+                        : 'Obedece órdenes',
+                ];
+ 
+            default:
+                return [];
+        }
+    }
+ 
 
     /*
     |--------------------------------------------------------------------------
@@ -197,7 +285,6 @@ class PacienteController extends Controller
                 ->where('id_paciente', $id)
                 ->update([
                     'nombre_completo' => $request->nombre_completo,
-                    'edad_meses' => $request->edad_meses,
                     'edad_estimada' => $request->edad_estimada ?? 0,
                     'sexo' => $request->sexo,
                     'nss' => $request->nss,
@@ -267,13 +354,13 @@ class PacienteController extends Controller
                     DB::table('triage_start')
                         ->where('fk_triage', $triage->id_triage)
                         ->update([
-                            'tipo_paciente' => $request->tipo_paciente,
+                            'tipo_paciente' => $request->tipo_paciente ?? 'Adulto',
                             'deambula' => $request->deambula,
                             'respira' => $request->respira,
                             'frecuencia_respiratoria' => $request->frecuencia_respiratoria,
                             'perfusion_alterada' => $request->perfusion_alterada,
                             'estado_mental_alterado' => $request->estado_mental_alterado,
-                            'ventilaciones_administradas' => $request->ventilaciones_administradas,
+                            'ventilaciones_administradas' => $request->ventilaciones_administradas ?? 0,
                             'intervenciones_criticas' => $request->intervenciones_criticas,
                         ]);
                     break;

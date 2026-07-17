@@ -3,6 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import api from "../services/api";
 import Sidebar from "../components/Sidebar";
+import {
+  INSTITUCIONES,
+  CAMPOS_POR_INSTITUCION,
+  NIVELES_POR_METODO,
+  construirDatosMetodo,
+} from "../constants/metodosTriage";
 import "../css/style-dash.css";
 
 function Pacientes() {
@@ -15,16 +21,20 @@ function Pacientes() {
     id_paciente: "",
     id_triage: "",
     nombre_completo: "",
-    edad: "",
+    edad_estimada: "",
     sexo: "",
+    nss: "",
     tipo_sangre: "",
-    nivel_evaluacion: "",
+    donador_organos: "",
     sintomas: "",
-    frecuencia_cardiaca: "",
-    presion_arterial: "",
-    temperatura: "",
+    comentario: "",
     habitacion: "",
+    nivel_triage: "",
   });
+
+  const [institucion, setInstitucion] = useState("");
+  const [datosMetodo, setDatosMetodo] = useState({});
+
   const usuario = JSON.parse(localStorage.getItem("usuario"));
   const navigate = useNavigate();
 
@@ -53,8 +63,26 @@ function Pacientes() {
   const editarPaciente = async (id) => {
     try {
       const response = await api.get(`/pacientes/${id}`);
-      const paciente = response.data;
-      setPacienteEditando({ ...paciente });
+      const { paciente: p, triage: t, institucion: inst, datos_metodo } = response.data;
+
+      setPacienteEditando({
+        id_paciente: p.id_paciente,
+        id_triage: t.id_triage,
+        nombre_completo: p.nombre_completo,
+        edad_estimada: p.edad_estimada,
+        sexo: p.sexo,
+        nss: p.nss,
+        tipo_sangre: p.tipo_sangre,
+        donador_organos: p.donador_organos,
+        sintomas: t.sintomas,
+        comentario: t.comentarios,
+        habitacion: t.habitacion,
+        nivel_triage: t.fk_nivel,
+      });
+
+      setInstitucion(inst || "");
+      setDatosMetodo(datos_metodo || {});
+
       setMostrarModal(true);
     } catch (error) {
       Swal.fire({
@@ -66,23 +94,50 @@ function Pacientes() {
     }
   };
 
+  const seleccionarInstitucion = (inst) => {
+    setInstitucion(inst);
+    setDatosMetodo({});
+    setPacienteEditando((prev) => ({ ...prev, nivel_triage: "" }));
+  };
+
+  const handleCampoMetodoChange = (key, value) => {
+    setDatosMetodo((prev) => ({ ...prev, [key]: value }));
+  };
+
   const guardarCambios = async () => {
     try {
-      await api.put(
-        `/pacientes/${pacienteEditando.id_paciente}`,
-        pacienteEditando,
-      );
-      alert("Paciente actualizado");
+      await api.put(`/pacientes/${pacienteEditando.id_paciente}`, {
+        nombre_completo: pacienteEditando.nombre_completo,
+        edad_estimada: pacienteEditando.edad_estimada,
+        sexo: pacienteEditando.sexo,
+        nss: pacienteEditando.nss,
+        tipo_sangre: pacienteEditando.tipo_sangre,
+        donador_organos: pacienteEditando.donador_organos,
+
+        id_triage: pacienteEditando.id_triage,
+        fk_nivel: Number(pacienteEditando.nivel_triage),
+        sintomas: pacienteEditando.sintomas,
+        comentarios: pacienteEditando.comentario,
+        habitacion: pacienteEditando.habitacion,
+
+        ...construirDatosMetodo(institucion, datosMetodo),
+      });
+
+      Swal.fire({
+        icon: "success",
+        title: "Paciente actualizado",
+        timer: 1500,
+        showConfirmButton: false,
+      });
       setMostrarModal(false);
       cargarPacientes();
     } catch (error) {
       Swal.fire({
         icon: "error",
         title: "Oops...",
-        text: "Error al guardar cambios",
+        text: error.response?.data?.message || "Error al guardar cambios",
       });
-      console.error(error);
-      console.log(error.response?.data);
+      console.error(error.response?.data || error);
     }
   };
 
@@ -136,6 +191,11 @@ function Pacientes() {
       [e.target.name]: e.target.value,
     });
   };
+
+  const camposActivos = CAMPOS_POR_INSTITUCION[institucion] || [];
+  const nivelesActivos = NIVELES_POR_METODO[institucion] || [];
+
+  const activeIndex = INSTITUCIONES.findIndex((i) => i.key === institucion);
 
   return (
     <>
@@ -276,7 +336,7 @@ function Pacientes() {
                 <label>Edad</label>
                 <input
                   type="text"
-                  name="edad"
+                  name="edad_estimada"
                   value={pacienteEditando.edad_estimada || ""}
                   onChange={handleChange}
                 />
@@ -333,24 +393,117 @@ function Pacientes() {
 
               <div className="section-title">Signos vitales y triage</div>
 
-              <div>
-                <label>Nivel de urgencia</label>
-                <select
-                  name="nivel_evaluacion"
-                  value={pacienteEditando.estado || ""}
+              {/* Selector de Institución / Método */}
+              <div className="full">
+                <label>Institución / Método de evaluación</label>
+
+                <div className="slider-toggle">
+                  <div
+                    className="slider-thumb"
+                    style={{
+                      width: `${100 / INSTITUCIONES.length}%`,
+                      transform: `translateX(${activeIndex >= 0 ? activeIndex * 100 : 0}%)`,
+                      opacity: activeIndex >= 0 ? 1 : 0,
+                    }}
+                  ></div>
+
+                  {INSTITUCIONES.map((inst) => (
+                    <button
+                      key={inst.key}
+                      type="button"
+                      className={`slider-option ${institucion === inst.key ? "active" : ""}`}
+                      onClick={() => seleccionarInstitucion(inst.key)}
+                    >
+                      {inst.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Campos dinámicos según institución */}
+              {camposActivos.map((campo) => (
+                <div key={campo.key}>
+                  <label>{campo.label}</label>
+
+                  {campo.type === "select" ? (
+                    <select
+                      value={datosMetodo[campo.key] || ""}
+                      onChange={(e) => handleCampoMetodoChange(campo.key, e.target.value)}
+                    >
+                      <option value="">Seleccione</option>
+                      {campo.options.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                  ) : campo.type === "textarea" ? (
+                    <textarea
+                      rows="3"
+                      value={datosMetodo[campo.key] || ""}
+                      onChange={(e) => handleCampoMetodoChange(campo.key, e.target.value)}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={datosMetodo[campo.key] || ""}
+                      onChange={(e) => handleCampoMetodoChange(campo.key, e.target.value)}
+                    />
+                  )}
+                </div>
+              ))}
+
+              {/* Síntomas y Comentarios */}
+              <div className="full">
+                <label>Síntomas e historia clínica</label>
+                <textarea
+                  rows="6"
+                  name="sintomas"
+                  value={pacienteEditando.sintomas || ""}
                   onChange={handleChange}
+                />
+              </div>
+
+              <div className="full">
+                <label>Comentarios</label>
+                <textarea
+                  rows="6"
+                  name="comentario"
+                  value={pacienteEditando.comentario || ""}
+                  onChange={handleChange}
+                />
+              </div>
+
+              {/* Nivel de triage */}
+              <div className="full">
+                <label>Nivel de triage</label>
+                <select
+                  name="nivel_triage"
+                  value={pacienteEditando.nivel_triage || ""}
+                  onChange={handleChange}
+                  disabled={!institucion}
                 >
-                  <option>ROJO</option>
-                  <option>NARANJA</option>
-                  <option>AMARILLO</option>
-                  <option>VERDE</option>
-                  <option>AZUL</option>
+                  <option value="">
+                    {institucion
+                      ? "Seleccione nivel"
+                      : "Primero selecciona una institución"}
+                  </option>
+                  {nivelesActivos.map((n) => (
+                    <option key={n.id} value={n.id}>
+                      {n.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 
-              <div className="full btn_guardar">
-                <button type="button" onClick={guardarCambios}>
-                  Guardar cambios
+              <div className="full botones-modal">
+                <button type="button" className="btn-guardar" onClick={guardarCambios}>
+                  <i className="fa-solid fa-floppy-disk"></i>
+                  Guardar evaluación
+                </button>
+                <button type="button" className="btn-ia" onClick={guardarCambios}>
+                  <i className="fa-solid fa-wand-magic-sparkles"></i>
+                  IA Evaluación
                 </button>
               </div>
             </form>

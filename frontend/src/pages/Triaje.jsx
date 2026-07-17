@@ -3,176 +3,14 @@ import Swal from "sweetalert2";
 import api from "../services/api";
 import Sidebar from "../components/Sidebar";
 import "../css/styles-triage.css";
-
-const INSTITUCIONES = [
-  { key: "IMSS", label: "IMSS" },
-  { key: "ISSSTE", label: "ISSSTE" },
-  { key: "Cruz Roja", label: "Cruz Roja / START" },
-];
-
-
-const MAPA_METODOS = {
-  IMSS: 1,
-  ISSSTE: 2,
-  "Cruz Roja": 3,
-};
-
-const NIVELES_POR_METODO = {
-  IMSS: [
-    { id: 1, label: "Nivel 1 - Rojo" },
-    { id: 2, label: "Nivel 2 - Naranja" },
-    { id: 3, label: "Nivel 3 - Amarillo" },
-    { id: 4, label: "Nivel 4 - Verde" },
-    { id: 5, label: "Nivel 5 - Azul" },
-  ],
-  ISSSTE: [
-    { id: 6, label: "Prioridad I - Rojo" },
-    { id: 7, label: "Prioridad II - Amarillo" },
-    { id: 8, label: "Prioridad III - Verde" },
-  ],
-  "Cruz Roja": [
-    { id: 9, label: "Inmediato (Rojo)" },
-    { id: 10, label: "Diferido (Amarillo)" },
-    { id: 11, label: "Menor (Verde)" },
-    { id: 12, label: "Fallecido / Expectante (Negro)" },
-  ],
-};
-
-const CAMPOS_POR_INSTITUCION = {
-  IMSS: [
-    {
-      key: "reanimacion_inmediata",
-      label: "¿Reanimación inmediata?",
-      type: "select",
-      options: ["Sí", "No"],
-    },
-    {
-      key: "alto_riesgo",
-      label:
-        "¿Alto riesgo, deterioro neurológico agudo o dificultad respiratoria severa?",
-      type: "select",
-      options: ["Sí", "No"],
-    },
-    {
-      key: "acciones_diagnosticas",
-      label: "Acciones diagnósticas",
-      type: "select",
-      options: ["0", "1", "Varias"],
-    },
-    { key: "frecuencia_cardiaca", label: "Frecuencia cardiaca", type: "text" },
-    {
-      key: "frecuencia_respiratoria",
-      label: "Frecuencia respiratoria",
-      type: "text",
-    },
-    { key: "saturacion_oxigeno", label: "Saturación de oxigeno", type: "text" },
-  ],
-  ISSSTE: [
-    { key: "frecuencia_cardiaca", label: "Frecuencia cardíaca", type: "text" },
-    {
-      key: "frecuencia_respiratoria",
-      label: "Frecuencia respiratoria",
-      type: "text",
-    },
-    { key: "escala_glasgow", label: "Escala de Glasgow", type: "text" },
-    { key: "glucosa_capilar", label: "Glucosa capilar", type: "text" },
-    {
-      key: "presion_arterial",
-      label: "Presión arterial (formato: sistólica/diastólica, ej. 120/80)",
-      type: "text",
-    },
-    { key: "saturacion_oxigeno", label: "Saturación de oxígeno", type: "text" },
-    { key: "temperatura", label: "Temperatura", type: "text" },
-  ],
-  "Cruz Roja": [
-    {
-      key: "deambulacion",
-      label: "Deambulación",
-      type: "select",
-      options: ["Camina", "No camina"],
-    },
-    {
-      key: "respiracion",
-      label: "Respiración",
-      type: "select",
-      options: ["Ausente", "Presente < 30/min", "Presente > 30/min"],
-    },
-    {
-      key: "frecuencia_respiratoria",
-      label: "Frecuencia respiratoria",
-      type: "number",
-    },
-    {
-      key: "perfusion",
-      label: "Perfusión",
-      type: "select",
-      options: ["Llenado capilar < 2s", "Llenado capilar > 2s / pulso ausente"],
-    },
-    {
-      key: "estado_mental",
-      label: "Estado mental",
-      type: "select",
-      options: ["Obedece órdenes", "No obedece órdenes"],
-    },
-  ],
-};
-
-
-function construirDatosMetodo(institucion, datos) {
-  switch (institucion) {
-    case "IMSS": {
-      let numAcciones = null;
-      if (datos.acciones_diagnosticas === "0") numAcciones = "Ninguna";
-      else if (datos.acciones_diagnosticas === "1") numAcciones = "Una";
-      else if (datos.acciones_diagnosticas === "Varias") numAcciones = "Varias";
-
-      return {
-        requiere_reanimacion: datos.reanimacion_inmediata === "Sí" ? 1 : 0,
-        alto_riesgo: datos.alto_riesgo === "Sí" ? 1 : 0,
-        deterioro_neurologico_agudo: 0,
-        dolor_severo: 0,
-        dificultad_respiratoria_severa: 0,
-        num_acciones_dx_tx: numAcciones,
-        frecuencia_cardiaca: datos.frecuencia_cardiaca || null,
-        frecuencia_respiratoria: datos.frecuencia_respiratoria || null,
-        saturacion_oxigeno: datos.saturacion_oxigeno || null,
-      };
-    }
-
-    case "ISSSTE": {
-      const partes = (datos.presion_arterial || "").split("/");
-      const sistolica = partes[0]?.trim() || null;
-      const diastolica = partes[1]?.trim() || null;
-
-      return {
-        glasgow: datos.escala_glasgow || null,
-        presion_sistolica: sistolica,
-        presion_diastolica: diastolica,
-        frecuencia_cardiaca: datos.frecuencia_cardiaca || null,
-        frecuencia_respiratoria: datos.frecuencia_respiratoria || null,
-        temperatura: datos.temperatura || null,
-        saturacion_oxigeno: datos.saturacion_oxigeno || null,
-        glucosa_capilar: datos.glucosa_capilar || null,
-      };
-    }
-
-    case "Cruz Roja": {
-      return {
-        tipo_paciente: "Adulto",
-        deambula: datos.deambulacion === "Camina" ? 1 : 0,
-        respira: datos.respiracion === "Ausente" ? 0 : 1,
-        frecuencia_respiratoria: datos.frecuencia_respiratoria || null,
-        perfusion_alterada:
-          datos.perfusion === "Llenado capilar > 2s / pulso ausente" ? 1 : 0,
-        estado_mental_alterado:
-          datos.estado_mental === "No obedece órdenes" ? 1 : 0,
-      };
-    }
-
-    default:
-      return {};
-  }
-}
+import {
+  INSTITUCIONES,
+  MAPA_METODOS,
+  NIVELES_POR_METODO,
+  CAMPOS_POR_INSTITUCION,
+  PROTOCOLO_IA_POR_INSTITUCION,
+  construirDatosMetodo,
+} from "../constants/metodosTriage";
 
 export default function Triage() {
   const [tipoPaciente, setTipoPaciente] = useState("existente");
@@ -207,9 +45,6 @@ export default function Triage() {
   const seleccionarInstitucion = (inst) => {
     setInstitucion(inst);
     setDatosMetodo({});
-    // El nivel seleccionado pertenece al método anterior; se limpia para
-    // que el usuario no envíe, por ejemplo, un id_nivel de IMSS mientras
-    // el fk_metodo ya apunta a ISSSTE.
     setTriage((prev) => ({ ...prev, nivel_triage: "" }));
   };
 
@@ -260,7 +95,60 @@ export default function Triage() {
       });
     }
   };
+  const evaluarConIA = async() =>{
+    if (!institucion) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Selecciona una institución / método",
+      });
+      return;
+    }
+    if (!triage.sintomas) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Captura los síntomas antes de pedir la evaluación de IA",
+      });
+      return;
+    }
+    try{
+      const response = await api.post("/ia/clasificar",{
+        tipo:PROTOCOLO_IA_POR_INSTITUCION[institucion],
+        sintomas:triage.sintomas,
+        comentario:triage.comentario,
+        ...datosMetodo
+      });
+      const textoLimpio = response.data.replace(/```json|```/g, "").trim();
+      const resultado = JSON.parse(textoLimpio);
+      
+      await Swal.fire({
+        icon: "info",
+        title: "Sugerencia de la IA",
+        html: `
+          <p><b>Nivel sugerido:</b> ${resultado.nivel_triage || "N/A"}</p>
+          <p><b>Prioridad:</b> ${resultado.prioridad || "N/A"}</p>
+          <p style="text-align:left; margin-top:10px;">${resultado.justificacion || ""}</p>
+        `,
+        confirmButtonText: "Entendido",
+      });
+    } catch (error) {
+      const mensajeBackend =
+        error.response?.data?.message ||
+        "Error al consultar la IA (revisa que Ollama esté corriendo y que el .env tenga OLLAMA_URL/OLLAMA_MODEL/OBSIDIAN_PATH configurados)";
+ 
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: mensajeBackend,
+      });
+ 
+      console.error(error.response?.data || error);
+    }
+  };
 
+    
+  
   const insertarTriage = async () => {
     if (!institucion) {
       Swal.fire({
@@ -618,7 +506,7 @@ export default function Triage() {
               <button
                 type="button"
                 className="btn btn-ia"
-                onClick={insertarTriage}
+                onClick={evaluarConIA}
               >
                 <i className="fa-solid fa-wand-magic-sparkles"></i>
                 IA Evaluación
