@@ -3,7 +3,64 @@ import { Link, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import api from "../services/api";
 import Sidebar from "../components/Sidebar";
+import { INSTITUCIONES, MAPA_METODOS, CAMPOS_POR_INSTITUCION, NIVELES_POR_METODO } from "../constants/metodosTriage";
 import "../css/style-dash.css";
+
+function construirDatosMetodo(institucion, datos) {
+  switch (institucion) {
+    case "IMSS": {
+      let numAcciones = null;
+      if (datos.acciones_diagnosticas === "0") numAcciones = "Ninguna";
+      else if (datos.acciones_diagnosticas === "1") numAcciones = "Una";
+      else if (datos.acciones_diagnosticas === "Varias") numAcciones = "Varias";
+
+      return {
+        requiere_reanimacion: datos.reanimacion_inmediata === "Sí" ? 1 : 0,
+        alto_riesgo: datos.alto_riesgo === "Sí" ? 1 : 0,
+        deterioro_neurologico_agudo: 0,
+        dolor_severo: 0,
+        dificultad_respiratoria_severa: 0,
+        num_acciones_dx_tx: numAcciones,
+        frecuencia_cardiaca: datos.frecuencia_cardiaca || null,
+        frecuencia_respiratoria: datos.frecuencia_respiratoria || null,
+        saturacion_oxigeno: datos.saturacion_oxigeno || null,
+      };
+    }
+
+    case "ISSSTE": {
+      const partes = (datos.presion_arterial || "").split("/");
+      const sistolica = partes[0]?.trim() || null;
+      const diastolica = partes[1]?.trim() || null;
+
+      return {
+        glasgow: datos.escala_glasgow || null,
+        presion_sistolica: sistolica,
+        presion_diastolica: diastolica,
+        frecuencia_cardiaca: datos.frecuencia_cardiaca || null,
+        frecuencia_respiratoria: datos.frecuencia_respiratoria || null,
+        temperatura: datos.temperatura || null,
+        saturacion_oxigeno: datos.saturacion_oxigeno || null,
+        glucosa_capilar: datos.glucosa_capilar || null,
+      };
+    }
+
+    case "Cruz Roja": {
+      return {
+        tipo_paciente: "Adulto",
+        deambula: datos.deambulacion === "Camina" ? 1 : 0,
+        respira: datos.respiracion === "Ausente" ? 0 : 1,
+        frecuencia_respiratoria: datos.frecuencia_respiratoria || null,
+        perfusion_alterada:
+          datos.perfusion === "Llenado capilar > 2s / pulso ausente" ? 1 : 0,
+        estado_mental_alterado:
+          datos.estado_mental === "No obedece órdenes" ? 1 : 0,
+      };
+    }
+
+    default:
+      return {};
+  }
+}
 
 function Pacientes() {
   const [pacientes, setPacientes] = useState([]);
@@ -11,20 +68,26 @@ function Pacientes() {
   const [mostrarModal, setMostrarModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  const [pacienteEditando, setPacienteEditando] = useState({
-    id_paciente: "",
-    id_triage: "",
+  const [paciente, setPaciente] = useState({
+    id_paciente:"",
     nombre_completo: "",
-    edad: "",
-    sexo: "",
-    tipo_sangre: "",
-    nivel_evaluacion: "",
-    sintomas: "",
-    frecuencia_cardiaca: "",
-    presion_arterial: "",
-    temperatura: "",
-    habitacion: "",
+    fecha_nacimiento: "",
+    edad_estimada: "",
+    sexo: "Masculino",
+    nss: "",
+    tipo_sangre: "DESCONOCIDO",
+    donador_organos: "NO",
   });
+  const [triage, setTriage] = useState({
+    sintomas: "",
+    nivel_triage: "",
+    comentario: "",
+  });
+
+
+  const [institucion, setInstitucion] = useState("");
+  const [datosMetodo, setDatosMetodo] = useState({});
+
   const usuario = JSON.parse(localStorage.getItem("usuario"));
   const navigate = useNavigate();
 
@@ -55,6 +118,10 @@ function Pacientes() {
       const response = await api.get(`/pacientes/${id}`);
       const paciente = response.data;
       setPacienteEditando({ ...paciente });
+
+      setInstitucion(paciente.metodo || "");
+      setDatosMetodo(paciente.datos_metodo || {});
+
       setMostrarModal(true);
     } catch (error) {
       Swal.fire({
@@ -66,12 +133,22 @@ function Pacientes() {
     }
   };
 
+  const seleccionarInstitucion = (inst) => {
+    setInstitucion(inst);
+    setDatosMetodo({});
+  };
+
+  const handleCampoMetodoChange = (key, value) => {
+    setDatosMetodo((prev) => ({ ...prev, [key]: value }));
+  };
+
   const guardarCambios = async () => {
     try {
-      await api.put(
-        `/pacientes/${pacienteEditando.id_paciente}`,
-        pacienteEditando,
-      );
+      await api.put(`/pacientes/${pacienteEditando.id_paciente}`, {
+        ...pacienteEditando,
+        metodo: institucion,
+        datos_metodo: datosMetodo,
+      });
       alert("Paciente actualizado");
       setMostrarModal(false);
       cargarPacientes();
@@ -136,6 +213,10 @@ function Pacientes() {
       [e.target.name]: e.target.value,
     });
   };
+
+  const camposActivos = CAMPOS_POR_INSTITUCION[institucion] || [];
+  
+  const activeIndex = INSTITUCIONES.findIndex((i) => i.key === institucion);
 
   return (
     <>
@@ -333,24 +414,112 @@ function Pacientes() {
 
               <div className="section-title">Signos vitales y triage</div>
 
-              <div>
-                <label>Nivel de urgencia</label>
+              {/* Selector de Institución / Método */}
+              <div className="full">
+                <label>Institución / Método de evaluación</label>
+
+                <div className="slider-toggle">
+                  <div
+                    className="slider-thumb"
+                    style={{
+                      width: `${100 / INSTITUCIONES.length}%`,
+                      transform: `translateX(${activeIndex >= 0 ? activeIndex * 100 : 0}%)`,
+                      opacity: activeIndex >= 0 ? 1 : 0,
+                    }}
+                  ></div>
+
+                  {INSTITUCIONES.map((inst) => (
+                    <button
+                      key={inst.key}
+                      type="button"
+                      className={`slider-option ${institucion === inst.key ? "active" : ""}`}
+                      onClick={() => seleccionarInstitucion(inst.key)}
+                    >
+                      {inst.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Campos dinámicos según institución */}
+              {camposActivos.map((campo) => (
+                <div key={campo.key}>
+                  <label>{campo.label}</label>
+
+                  {campo.type === "select" ? (
+                    <select
+                      value={datosMetodo[campo.key] || ""}
+                      onChange={(e) => handleCampoMetodoChange(campo.key, e.target.value)}
+                    >
+                      <option value="">Seleccione</option>
+                      {campo.options.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                  ) : campo.type === "textarea" ? (
+                    <textarea
+                      rows="3"
+                      value={datosMetodo[campo.key] || ""}
+                      onChange={(e) => handleCampoMetodoChange(campo.key, e.target.value)}
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={datosMetodo[campo.key] || ""}
+                      onChange={(e) => handleCampoMetodoChange(campo.key, e.target.value)}
+                    />
+                  )}
+                </div>
+              ))}
+
+              {/* Síntomas y Comentarios */}
+              <div className="full">
+                <label>Síntomas e historia clínica</label>
+                <textarea
+                  rows="6"
+                  name="sintomas"
+                  value={pacienteEditando.sintomas || ""}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="full">
+                <label>Comentarios</label>
+                <textarea
+                  rows="6"
+                  name="comentario"
+                  value={pacienteEditando.comentario || ""}
+                  onChange={handleChange}
+                />
+              </div>
+
+              {/* Nivel de triage */}
+              <div className="full">
+                <label>Nivel de triage</label>
                 <select
-                  name="nivel_evaluacion"
-                  value={pacienteEditando.estado || ""}
+                  name="nivel_triage"
+                  value={pacienteEditando.nivel_triage || ""}
                   onChange={handleChange}
                 >
-                  <option>ROJO</option>
-                  <option>NARANJA</option>
-                  <option>AMARILLO</option>
-                  <option>VERDE</option>
-                  <option>AZUL</option>
+                  <option value="">Seleccione nivel</option>
+                  <option value="rojo">Rojo - Emergencia</option>
+                  <option value="naranja">Naranja - Muy urgente</option>
+                  <option value="amarillo">Amarillo - Urgente</option>
+                  <option value="verde">Verde - Poco urgente</option>
+                  <option value="azul">Azul - No urgente</option>
                 </select>
               </div>
 
-              <div className="full btn_guardar">
-                <button type="button" onClick={guardarCambios}>
-                  Guardar cambios
+              <div className="full botones-modal">
+                <button type="button" className="btn-guardar" onClick={guardarCambios}>
+                  <i className="fa-solid fa-floppy-disk"></i>
+                  Guardar evaluación
+                </button>
+                <button type="button" className="btn-ia" onClick={guardarCambios}>
+                  <i className="fa-solid fa-wand-magic-sparkles"></i>
+                  IA Evaluación
                 </button>
               </div>
             </form>
