@@ -1,522 +1,520 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import Swal from "sweetalert2";
 import api from "../services/api";
 import Sidebar from "../components/Sidebar";
+import "../css/styles-triage.css";
 import {
   INSTITUCIONES,
   MAPA_METODOS,
-  CAMPOS_POR_INSTITUCION,
   NIVELES_POR_METODO,
+  CAMPOS_POR_INSTITUCION,
+  PROTOCOLO_IA_POR_INSTITUCION,
   construirDatosMetodo,
 } from "../constants/metodosTriage";
-import "../css/style-dash.css";
 
-function Pacientes() {
-  const [pacientes, setPacientes] = useState([]);
-  const [busqueda, setBusqueda] = useState("");
-  const [mostrarModal, setMostrarModal] = useState(false);
+export default function Triage() {
+  const [tipoPaciente, setTipoPaciente] = useState("existente");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  const [pacienteEditando, setPacienteEditando] = useState({
-    id_paciente: "",
-    id_triage: "",
+  const [paciente, setPaciente] = useState({
+    id_paciente:"",
     nombre_completo: "",
+    fecha_nacimiento: "",
     edad_estimada: "",
-    sexo: "",
+    sexo: "Masculino",
     nss: "",
-    tipo_sangre: "",
-    donador_organos: "",
-    sintomas: "",
-    comentario: "",
-    habitacion: "",
-    nivel_triage: "",
+    tipo_sangre: "DESCONOCIDO",
+    donador_organos: "NO",
   });
+
+  const [buscarPaciente, setBuscarPaciente] = useState("");
+  const [resultados, setResultados] = useState([]);
+  const [idPaciente, setIdPaciente] = useState("");
+
+  const usuario = JSON.parse(localStorage.getItem("usuario"));
 
   const [institucion, setInstitucion] = useState("");
   const [datosMetodo, setDatosMetodo] = useState({});
 
-  const usuario = JSON.parse(localStorage.getItem("usuario"));
-  const navigate = useNavigate();
-
-  const cargarPacientes = async () => {
-    try {
-      const response = await api.get("/pacientes");
-      setPacientes(response.data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  useEffect(() => {
-    cargarPacientes();
-  }, []);
-
-  const pacientesFiltrados = pacientes.filter((p) =>
-    p.nombre_completo?.toLowerCase().includes(busqueda.toLowerCase()),
-  );
-
-  const verPaciente = (id) => {
-    localStorage.setItem("idPaciente", id);
-    navigate(`/seguimiento/${id}`);
-  };
-
-  const editarPaciente = async (id) => {
-    try {
-      const response = await api.get(`/pacientes/${id}`);
-      const { paciente: p, triage: t } = response.data;
-
-      setPacienteEditando({
-        id_paciente: p.id_paciente,
-        id_triage: t.id_triage,
-        nombre_completo: p.nombre_completo,
-        edad_estimada: p.edad_estimada,
-        sexo: p.sexo,
-        nss: p.nss,
-        tipo_sangre: p.tipo_sangre,
-        donador_organos: p.donador_organos,
-        sintomas: t.sintomas,
-        comentario: t.comentarios,
-        habitacion: t.habitacion,
-        nivel_triage: t.fk_nivel,
-      });
-
-      const institucionEncontrada = Object.keys(MAPA_METODOS).find(
-        (key) => MAPA_METODOS[key] === t.fk_metodo,
-      );
-      setInstitucion(institucionEncontrada || "");
-
-      setDatosMetodo({});
-
-      setMostrarModal(true);
-    } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "Error al editar al paciente",
-      });
-      console.error(error);
-    }
-  };
+  const [triage, setTriage] = useState({
+    sintomas: "",
+    nivel_triage: "",
+    comentario: "",
+  });
 
   const seleccionarInstitucion = (inst) => {
     setInstitucion(inst);
     setDatosMetodo({});
-    setPacienteEditando((prev) => ({ ...prev, nivel_triage: "" }));
+    setTriage((prev) => ({ ...prev, nivel_triage: "" }));
   };
 
-  const handleCampoMetodoChange = (key, value) => {
+  const handleCampoChange = (key, value) => {
     setDatosMetodo((prev) => ({ ...prev, [key]: value }));
   };
 
-  const guardarCambios = async () => {
-    try {
-      await api.put(`/pacientes/${pacienteEditando.id_paciente}`, {
-        nombre_completo: pacienteEditando.nombre_completo,
-        edad_estimada: pacienteEditando.edad_estimada,
-        sexo: pacienteEditando.sexo,
-        nss: pacienteEditando.nss,
-        tipo_sangre: pacienteEditando.tipo_sangre,
-        donador_organos: pacienteEditando.donador_organos,
+  const activeIndex = INSTITUCIONES.findIndex((i) => i.key === institucion);
 
-        id_triage: pacienteEditando.id_triage,
-        fk_nivel: Number(pacienteEditando.nivel_triage),
-        sintomas: pacienteEditando.sintomas,
-        comentarios: pacienteEditando.comentario,
-        habitacion: pacienteEditando.habitacion,
+  const insertarPaciente = async () => {
+    try {
+      if (tipoPaciente === "nuevo") {
+        const response = await api.post("/pacientes", {
+          nombre_completo: paciente.nombre_completo,
+          fecha_nacimiento: paciente.fecha_nacimiento,
+          edad_estimada: paciente.edad_estimada,
+          sexo: paciente.sexo,
+          nss: paciente.nss,
+          tipo_sangre: paciente.tipo_sangre,
+          donador_organos: paciente.donador_organos,
+        });
+        Swal.fire({
+          title: "Paciente insertado con éxito",
+          text:
+            "Paciente registrado correctamente con ID " +
+            response.data.id_paciente,
+          icon: "success",
+        });
+        console.log(response.data.id_paciente)
+        setIdPaciente(response.data.id_paciente);
+      } else {
+        if (!buscarPaciente.trim()) {
+          Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: "Escribe algo para buscar",
+          });
+          return;
+        }
+        const response = await api.get(`/pacientes/buscar/${buscarPaciente}`);
+        setResultados(response.data);
+      }
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Error al registrar el triage",
+      });
+    }
+  };
+  const evaluarConIA = async() =>{
+    if (!institucion) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Selecciona una institución / método",
+      });
+      return;
+    }
+    if (!triage.sintomas) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Captura los síntomas antes de pedir la evaluación de IA",
+      });
+      return;
+    }
+    try{
+      const response = await api.post("/ia/clasificar",{
+        tipo:PROTOCOLO_IA_POR_INSTITUCION[institucion],
+        sintomas:triage.sintomas,
+        comentario:triage.comentario,
+        ...datosMetodo
+      });
+      const textoLimpio = response.data.replace(/```json|```/g, "").trim();
+      const resultado = JSON.parse(textoLimpio);
+      
+      await Swal.fire({
+        icon: "info",
+        title: "Sugerencia de la IA",
+        html: `
+          <p><b>Nivel sugerido:</b> ${resultado.nivel_triage || "N/A"}</p>
+          <p><b>Prioridad:</b> ${resultado.prioridad || "N/A"}</p>
+          <p style="text-align:left; margin-top:10px;">${resultado.justificacion || ""}</p>
+        `,
+        confirmButtonText: "Entendido",
+      });
+    } catch (error) {
+      const mensajeBackend =
+        error.response?.data?.message ||
+        "Error al consultar la IA (revisa que Ollama esté corriendo y que el .env tenga OLLAMA_URL/OLLAMA_MODEL/OBSIDIAN_PATH configurados)";
+ 
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: mensajeBackend,
+      });
+ 
+      console.error(error.response?.data || error);
+    }
+  };
+
+    
+  
+  const insertarTriage = async () => {
+    if (!institucion) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Selecciona una institución / método",
+      });
+      return;
+    }
+    if (!triage.sintomas || !triage.nivel_triage) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Completa todos los campos del triage",
+      });
+      return;
+    }
+    if (!idPaciente) {
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Elige un paciente",
+      });
+      return;
+    }
+
+    try {
+      const response = await api.post("/triage", {
+        fk_metodo: MAPA_METODOS[institucion],
+        fk_nivel: Number(triage.nivel_triage),
+        sintomas: triage.sintomas,
+        comentarios: triage.comentario,
+        id_persona: usuario.id_persona,
+        id_paciente: idPaciente,
 
         ...construirDatosMetodo(institucion, datosMetodo),
       });
 
       Swal.fire({
+        title: "Paciente insertado con éxito",
+        text:
+          "Triage registrado correctamente con ID " + response.data.id_triage,
         icon: "success",
-        title: "Paciente actualizado",
-        timer: 1500,
-        showConfirmButton: false,
       });
-      setMostrarModal(false);
-      cargarPacientes();
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (error) {
+      const mensajeBackend =
+        error.response?.data?.message || "Error al registrar el triage";
+
       Swal.fire({
         icon: "error",
         title: "Oops...",
-        text: error.response?.data?.message || "Error al guardar cambios",
+        text: mensajeBackend,
       });
+
       console.error(error.response?.data || error);
     }
-  };
-
-  const mostrarEliminar = async (idPaciente, idTriage) => {
-    const result = await Swal.fire({
-      title: "¿Qué deseas eliminar?",
-      text: "Selecciona una opción",
-      icon: "warning",
-      showDenyButton: true,
-      showCancelButton: true,
-      confirmButtonText: "Solo triage",
-      denyButtonText: "Paciente completo",
-      cancelButtonText: "Cancelar",
-      confirmButtonColor: "#f39c12",
-      denyButtonColor: "#e74c3c",
-    });
-
-    try {
-      if (result.isConfirmed) {
-        await api.put(`/triage/${idTriage}/eliminar`);
-        Swal.fire("Eliminado", "El triage fue eliminado", "success");
-        cargarPacientes();
-      }
-
-      if (result.isDenied) {
-        const confirmar = await Swal.fire({
-          title: "¿Eliminar paciente?",
-          text: "También se eliminarán todos sus triages.",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonText: "Sí, eliminar",
-          cancelButtonText: "Cancelar",
-          confirmButtonColor: "#e74c3c",
-        });
-
-        if (!confirmar.isConfirmed) return;
-
-        await api.put(`/pacientes/${idPaciente}/eliminar`);
-        Swal.fire("Eliminado", "Paciente eliminado", "success");
-        cargarPacientes();
-      }
-    } catch (error) {
-      console.error(error);
-      Swal.fire("Error", "No fue posible eliminar", "error");
-    }
-  };
-
-  const handleChange = (e) => {
-    setPacienteEditando({
-      ...pacienteEditando,
-      [e.target.name]: e.target.value,
-    });
   };
 
   const camposActivos = CAMPOS_POR_INSTITUCION[institucion] || [];
   const nivelesActivos = NIVELES_POR_METODO[institucion] || [];
 
-  const activeIndex = INSTITUCIONES.findIndex((i) => i.key === institucion);
-
   return (
-    <>
-      <div className="dashboard-container">
-        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <div className="dashboard-container">
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-        <div className="main">
-          <div className="topbar">
-            <button className="hamburger" onClick={() => setSidebarOpen(!sidebarOpen)}>
-              <i className="fa-solid fa-bars"></i>
-            </button>
-            <h3>Pacientes</h3>
-            <div className="user">¡Hola! {usuario?.nombre}</div>
-          </div>
+      <div className="main">
+        <header className="topbar">
+          <button
+            className="hamburger"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            <i className="fa-solid fa-bars"></i>
+          </button>
+          <h3>Triage</h3>
+          <div className="user">¡Hola! {usuario?.nombre}</div>
+        </header>
 
-          <div className="table-container" style={{ marginBottom: "20px" }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: "15px",
-              }}
-            >
-              <input
-                type="text"
-                placeholder="Buscar paciente..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                className="txt"
-                style={{
-                  maxWidth: "300px",
-                  padding: "10px",
-                }}
+        <div className="triage-content">
+          {/* PACIENTE */}
+          <form id="formPaciente">
+            <div className="card">
+              <h3>Paciente</h3>
+
+              <div className="tabs">
+                <button
+                  type="button"
+                  className={`tab-btn ${tipoPaciente === "existente" ? "active" : ""}`}
+                  onClick={() => setTipoPaciente("existente")}
+                >
+                  Paciente existente
+                </button>
+                <button
+                  type="button"
+                  className={`tab-btn ${tipoPaciente === "nuevo" ? "active" : ""}`}
+                  onClick={() => setTipoPaciente("nuevo")}
+                >
+                  Nuevo paciente
+                </button>
+              </div>
+
+              {tipoPaciente === "existente" ? (
+                <div id="busquedaPaciente">
+                  <input
+                    type="text"
+                    placeholder="Buscar por ID, NSS o nombre"
+                    value={buscarPaciente}
+                    onChange={(e) => setBuscarPaciente(e.target.value)}
+                  />
+
+                  <div id="resultados">
+                    {resultados.length === 0 ? (
+                      <p className="sin-resultados">No hay resultados</p>
+                    ) : (
+                      resultados.map((p) => (
+                        <div
+                          key={p.id_paciente}
+                          className={`resultado-item ${idPaciente === p.id_paciente ? "seleccionado" : ""}`}
+                          onClick={() => {
+                            setIdPaciente(p.id_paciente);
+                            Swal.fire({
+                              icon: "success",
+                              title: "Seleccionaste un paciente",
+                              text: `Paciente seleccionado: ${p.id_paciente}`,
+                            });
+                          }}
+                        >
+                          <strong>{p.nombre_completo}</strong>
+                          <br />
+                          NSS: {p.nss}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div id="nuevoPaciente">
+                  <input
+                    type="text"
+                    placeholder="Nombre completo"
+                    value={paciente.nombre_completo}
+                    onChange={(e) =>
+                      setPaciente({
+                        ...paciente,
+                        nombre_completo: e.target.value,
+                      })
+                    }
+                  />
+
+                  <input
+                    type="date"
+                    value={paciente.fecha_nacimiento}
+                    onChange={(e) =>
+                      setPaciente({
+                        ...paciente,
+                        fecha_nacimiento: e.target.value,
+                      })
+                    }
+                  />
+
+                  <input
+                    type="text"
+                    placeholder="Edad estimada"
+                    value={paciente.edad_estimada}
+                    onChange={(e) =>
+                      setPaciente({
+                        ...paciente,
+                        edad_estimada: e.target.value,
+                      })
+                    }
+                  />
+
+                  <select
+                    value={paciente.sexo}
+                    onChange={(e) =>
+                      setPaciente({ ...paciente, sexo: e.target.value })
+                    }
+                  >
+                    <option value="Masculino">Masculino</option>
+                    <option value="Femenino">Femenino</option>
+                  </select>
+
+                  <input
+                    type="number"
+                    placeholder="NSS"
+                    value={paciente.nss}
+                    onChange={(e) =>
+                      setPaciente({ ...paciente, nss: e.target.value })
+                    }
+                  />
+
+                  <label className="label-select">Tipo de sangre</label>
+
+                  <select
+                    value={paciente.tipo_sangre}
+                    onChange={(e) =>
+                      setPaciente({ ...paciente, tipo_sangre: e.target.value })
+                    }
+                  >
+                    <option>O+</option>
+                    <option>O-</option>
+                    <option>A+</option>
+                    <option>A-</option>
+                    <option>B+</option>
+                    <option>B-</option>
+                    <option>AB+</option>
+                    <option>AB-</option>
+                    <option>DESCONOCIDO</option>
+                  </select>
+                  <label className="label-select">Donador de organos</label>
+
+                  <select
+                    value={paciente.donador_organos}
+                    onChange={(e) =>
+                      setPaciente({
+                        ...paciente,
+                        donador_organos: e.target.value,
+                      })
+                    }
+                  >
+                    <option>SI</option>
+                    <option>NO</option>
+                  </select>
+                </div>
+              )}
+
+              <button type="button" className="btn" onClick={insertarPaciente}>
+                Consultar/Insertar paciente
+              </button>
+            </div>
+          </form>
+
+          {/* TRIAGE */}
+          <form id="formTriage">
+            {/* Selector de institución */}
+            <div className="card institucion-card">
+              <h3>Institución / Método de evaluación</h3>
+
+              <div className="slider-toggle">
+                <div
+                  className="slider-thumb"
+                  style={{
+                    width: `${100 / INSTITUCIONES.length}%`,
+                    transform: `translateX(${activeIndex >= 0 ? activeIndex * 100 : 0}%)`,
+                    opacity: activeIndex >= 0 ? 1 : 0,
+                  }}
+                ></div>
+
+                {INSTITUCIONES.map((inst) => (
+                  <button
+                    key={inst.key}
+                    type="button"
+                    className={`slider-option ${institucion === inst.key ? "active" : ""}`}
+                    onClick={() => seleccionarInstitucion(inst.key)}
+                  >
+                    {inst.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Campos dinámicos según institución */}
+            {camposActivos.map((campo) => (
+              <div className="card" key={campo.key}>
+                <h3>{campo.label}</h3>
+
+                {campo.type === "select" ? (
+                  <select
+                    value={datosMetodo[campo.key] || ""}
+                    onChange={(e) =>
+                      handleCampoChange(campo.key, e.target.value)
+                    }
+                  >
+                    <option value="">Seleccione</option>
+                    {campo.options.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                ) : campo.type === "textarea" ? (
+                  <textarea
+                    rows="4"
+                    value={datosMetodo[campo.key] || ""}
+                    onChange={(e) =>
+                      handleCampoChange(campo.key, e.target.value)
+                    }
+                  />
+                ) : (
+                  <input
+                    type={campo.type}
+                    value={datosMetodo[campo.key] || ""}
+                    onChange={(e) =>
+                      handleCampoChange(campo.key, e.target.value)
+                    }
+                  />
+                )}
+              </div>
+            ))}
+            <div className="card sintomas">
+              <h3>Síntomas e historia clínica</h3>
+              <textarea
+                rows="8"
+                value={triage.sintomas}
+                onChange={(e) =>
+                  setTriage({ ...triage, sintomas: e.target.value })
+                }
+                required
               />
-
-              <Link to="/triaje" className="view">
-                <i className="fa-solid fa-plus"></i>
-              </Link>
             </div>
-            <div className="tab-con">
-              <table>
-                <thead>
-                  <tr>
-                    <th>ID Triage</th>
-                    <th>ID Paciente</th>
-                    <th>Nombre</th>
-                    <th>Edad</th>
-                    <th>Sexo</th>
-                    <th>Síntomas</th>
-                    <th>Método</th>
-                    <th>Prioridad</th>
-                    <th>Habitación</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
 
-                <tbody>
-                  {pacientesFiltrados.length === 0 ? (
-                    <tr>
-                      <td colSpan="9" style={{ textAlign: "center" }}>
-                        No hay pacientes
-                      </td>
-                    </tr>
-                  ) : (
-                    pacientesFiltrados.map((paciente) => (
-                      <tr key={paciente.id_triage}>
-                        <td>{paciente.id_triage}</td>
-                        <td>{paciente.id_paciente}</td>
-                        <td>{paciente.nombre_completo}</td>
-                        <td>{paciente.edad_estimada}</td>
-                        <td>{paciente.sexo}</td>
-                        <td>{paciente.sintomas}</td>
-                        <td>{paciente.metodo_codigo}</td>
-                        <td>{paciente.prioridad}</td>
-                        <td>{paciente.habitacion}</td>
-                        <td className="acciones">
-                          <div className="acciones-contenedor">
-                            <button
-                              className="view"
-                              onClick={() => editarPaciente(paciente.id_paciente)}
-                            >
-                              <i className="fa-solid fa-pencil" style={{ color: "#4116db" }} />
-                            </button>
-
-                            <button
-                              className="view"
-                              onClick={() => verPaciente(paciente.id_paciente)}
-                            >
-                              <i className="fa-solid fa-eye" style={{ color: "#0a8076" }} />
-                            </button>
-
-                            <button
-                              className="view"
-                              onClick={() =>
-                                mostrarEliminar(paciente.id_paciente, paciente.id_triage)
-                              }
-                            >
-                              <i className="fa-solid fa-trash" style={{ color: "#db1616" }} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+            <div className="card">
+              <h3>Comentarios</h3>
+              <textarea
+                rows="8"
+                value={triage.comentario}
+                onChange={(e) =>
+                  setTriage({ ...triage, comentario: e.target.value })
+                }
+              />
             </div>
-          </div>
+
+            <div className="card">
+              <h3>Nivel de triage</h3>
+              <select
+                value={triage.nivel_triage}
+                onChange={(e) =>
+                  setTriage({ ...triage, nivel_triage: e.target.value })
+                }
+                disabled={!institucion}
+              >
+                <option value="">
+                  {institucion
+                    ? "Seleccione nivel"
+                    : "Primero selecciona una institución"}
+                </option>
+                {nivelesActivos.map((n) => (
+                  <option key={n.id} value={n.id}>
+                    {n.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="card botones">
+              <button
+                type="button"
+                className="btn btn-guardar"
+                onClick={insertarTriage}
+              >
+                <i className="fa-solid fa-floppy-disk"></i>
+                Guardar evaluación
+              </button>
+              <button
+                type="button"
+                className="btn btn-ia"
+                onClick={evaluarConIA}
+              >
+                <i className="fa-solid fa-wand-magic-sparkles"></i>
+                IA Evaluación
+              </button>
+            </div>
+          </form>
         </div>
       </div>
-
-      {mostrarModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h2>
-                <i className="fa-solid fa-notes-medical"></i> Detalles del paciente
-              </h2>
-              <div className="btnClose" onClick={() => setMostrarModal(false)}>
-                <i className="fa-solid fa-xmark"></i>
-              </div>
-            </div>
-
-            <form className="modal-form">
-              <div className="section-title">Información personal</div>
-
-              <div className="full">
-                <label>Nombre completo</label>
-                <input
-                  type="text"
-                  name="nombre_completo"
-                  value={pacienteEditando.nombre_completo || ""}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div>
-                <label>Edad</label>
-                <input
-                  type="text"
-                  name="edad_estimada"
-                  value={pacienteEditando.edad_estimada || ""}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div>
-                <label>Sexo</label>
-                <select name="sexo" value={pacienteEditando.sexo || ""} onChange={handleChange}>
-                  <option value="Masculino">Masculino</option>
-                  <option value="Femenino">Femenino</option>
-                </select>
-              </div>
-
-              <div>
-                <label>Número de seguro social</label>
-                <input
-                  type="text"
-                  name="nss"
-                  value={pacienteEditando.nss || ""}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div>
-                <label>Tipo de sangre</label>
-                <select
-                  name="tipo_sangre"
-                  value={pacienteEditando.tipo_sangre || ""}
-                  onChange={handleChange}
-                >
-                  <option>O+</option>
-                  <option>O-</option>
-                  <option>A+</option>
-                  <option>A-</option>
-                  <option>B+</option>
-                  <option>B-</option>
-                  <option>AB+</option>
-                  <option>AB-</option>
-                  <option>DESCONOCIDO</option>
-                </select>
-              </div>
-
-              <div>
-                <label>¿Es donador?</label>
-                <select
-                  name="donador_organos"
-                  value={pacienteEditando.donador_organos || ""}
-                  onChange={handleChange}
-                >
-                  <option value="SI">SI</option>
-                  <option value="NO">NO</option>
-                </select>
-              </div>
-
-              <div className="section-title">Signos vitales y triage</div>
-
-              {/* Selector de Institución / Método */}
-              <div className="full">
-                <label>Institución / Método de evaluación</label>
-
-                <div className="slider-toggle">
-                  <div
-                    className="slider-thumb"
-                    style={{
-                      width: `${100 / INSTITUCIONES.length}%`,
-                      transform: `translateX(${activeIndex >= 0 ? activeIndex * 100 : 0}%)`,
-                      opacity: activeIndex >= 0 ? 1 : 0,
-                    }}
-                  ></div>
-
-                  {INSTITUCIONES.map((inst) => (
-                    <button
-                      key={inst.key}
-                      type="button"
-                      className={`slider-option ${institucion === inst.key ? "active" : ""}`}
-                      onClick={() => seleccionarInstitucion(inst.key)}
-                    >
-                      {inst.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Campos dinámicos según institución */}
-              {camposActivos.map((campo) => (
-                <div key={campo.key}>
-                  <label>{campo.label}</label>
-
-                  {campo.type === "select" ? (
-                    <select
-                      value={datosMetodo[campo.key] || ""}
-                      onChange={(e) => handleCampoMetodoChange(campo.key, e.target.value)}
-                    >
-                      <option value="">Seleccione</option>
-                      {campo.options.map((opt) => (
-                        <option key={opt} value={opt}>
-                          {opt}
-                        </option>
-                      ))}
-                    </select>
-                  ) : campo.type === "textarea" ? (
-                    <textarea
-                      rows="3"
-                      value={datosMetodo[campo.key] || ""}
-                      onChange={(e) => handleCampoMetodoChange(campo.key, e.target.value)}
-                    />
-                  ) : (
-                    <input
-                      type="text"
-                      value={datosMetodo[campo.key] || ""}
-                      onChange={(e) => handleCampoMetodoChange(campo.key, e.target.value)}
-                    />
-                  )}
-                </div>
-              ))}
-
-              {/* Síntomas y Comentarios */}
-              <div className="full">
-                <label>Síntomas e historia clínica</label>
-                <textarea
-                  rows="6"
-                  name="sintomas"
-                  value={pacienteEditando.sintomas || ""}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="full">
-                <label>Comentarios</label>
-                <textarea
-                  rows="6"
-                  name="comentario"
-                  value={pacienteEditando.comentario || ""}
-                  onChange={handleChange}
-                />
-              </div>
-
-              {/* Nivel de triage */}
-              <div className="full">
-                <label>Nivel de triage</label>
-                <select
-                  name="nivel_triage"
-                  value={pacienteEditando.nivel_triage || ""}
-                  onChange={handleChange}
-                  disabled={!institucion}
-                >
-                  <option value="">
-                    {institucion
-                      ? "Seleccione nivel"
-                      : "Primero selecciona una institución"}
-                  </option>
-                  {nivelesActivos.map((n) => (
-                    <option key={n.id} value={n.id}>
-                      {n.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="full botones-modal">
-                <button type="button" className="btn-guardar" onClick={guardarCambios}>
-                  <i className="fa-solid fa-floppy-disk"></i>
-                  Guardar evaluación
-                </button>
-                <button type="button" className="btn-ia" onClick={guardarCambios}>
-                  <i className="fa-solid fa-wand-magic-sparkles"></i>
-                  IA Evaluación
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </>
+    </div>
   );
 }
-
-export default Pacientes;

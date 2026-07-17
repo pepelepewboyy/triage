@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Validator;
 
 class PersonaController extends Controller
 {
-    // Roles válidos según el ENUM de la tabla `persona`
+    // Roles validos para persona
     private const ROLES_VALIDOS = ['Medico(a)', 'Paramedico(a)', 'Enfermero(a)', 'Admin'];
 
     /*

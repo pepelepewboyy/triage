@@ -24,8 +24,8 @@
 
                 // Obtener el contexto desde Obsidian
                 $contexto = $this->obsidian->obtenerContexto(strtoupper($request->tipo));
-                // Construir el prompt
-                $prompt = $this->crearPrompt($contexto,$request->all());
+                //Se genera el prompt a base de lo obtenido
+                $prompt = $this->crearPrompt($contexto, $request->except('tipo'));
                 // Consultar Ollama
                 $respuesta = $this->ollama->analizar($prompt);
                 return response()->json($respuesta);
@@ -63,15 +63,17 @@
 
                 Clasifica al paciente.
 
-                Devuelve un json con la siguiente estructura:
+                Devuelve ÚNICAMENTE un JSON válido (comillas dobles, sin comas
+                finales) con exactamente esta estructura:
                 {
-                    'success':true,
-                    'nivel de triage':'',
-                    'prioridad':'',
-                    'justificacion':''
+                    \"success\": true,
+                    \"nivel_triage\": \"\",
+                    \"prioridad\": \"\",
+                    \"justificacion\": \"\"
                 }
 
-                No agregues texto antes ni despues del json.
+                No agregues texto antes ni después del json. No uses bloques
+                de código (```). Responde solo el objeto JSON.
                 ";
         }
         private function construirDatosPaciente(array $paciente): string{

@@ -10,6 +10,12 @@ export const MAPA_METODOS = {
   "Cruz Roja": 3,
 };
 
+export const PROTOCOLO_IA_POR_INSTITUCION = {
+  IMSS: "IMSS",
+  ISSSTE: "ISSSTE",
+  "Cruz Roja": "START",
+};
+
 export const NIVELES_POR_METODO = {
   IMSS: [
     { id: 1, label: "Nivel 1 - Rojo" },
@@ -110,11 +116,6 @@ export const CAMPOS_POR_INSTITUCION = {
   ],
 };
 
-// Traduce lo que captura la UI (texto legible para el usuario, ej. "Sí",
-// "Camina", "120/80") a los nombres y tipos de columna que espera cada
-// tabla de detalle en la BD (triage_imss / triage_isste / triage_start).
-// Se usa tanto al crear un triage (Triaje.jsx) como al editarlo
-// (Pacientes.jsx), por eso vive aquí y no duplicado en cada archivo.
 export function construirDatosMetodo(institucion, datos) {
   switch (institucion) {
     case "IMSS": {
@@ -122,7 +123,7 @@ export function construirDatosMetodo(institucion, datos) {
       if (datos.acciones_diagnosticas === "0") numAcciones = "Ninguna";
       else if (datos.acciones_diagnosticas === "1") numAcciones = "Una";
       else if (datos.acciones_diagnosticas === "Varias") numAcciones = "Varias";
-
+ 
       return {
         requiere_reanimacion: datos.reanimacion_inmediata === "Sí" ? 1 : 0,
         alto_riesgo: datos.alto_riesgo === "Sí" ? 1 : 0,
@@ -135,12 +136,12 @@ export function construirDatosMetodo(institucion, datos) {
         saturacion_oxigeno: datos.saturacion_oxigeno || null,
       };
     }
-
+ 
     case "ISSSTE": {
       const partes = (datos.presion_arterial || "").split("/");
       const sistolica = partes[0]?.trim() || null;
       const diastolica = partes[1]?.trim() || null;
-
+ 
       return {
         glasgow: datos.escala_glasgow || null,
         presion_sistolica: sistolica,
@@ -152,7 +153,7 @@ export function construirDatosMetodo(institucion, datos) {
         glucosa_capilar: datos.glucosa_capilar || null,
       };
     }
-
+ 
     case "Cruz Roja": {
       return {
         tipo_paciente: "Adulto",
@@ -165,8 +166,9 @@ export function construirDatosMetodo(institucion, datos) {
           datos.estado_mental === "No obedece órdenes" ? 1 : 0,
       };
     }
-
+ 
     default:
       return {};
   }
 }
+ 

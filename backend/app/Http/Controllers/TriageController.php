@@ -10,45 +10,6 @@ use Illuminate\Support\Facades\Validator;
 
 class TriageController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | CLASIFICACIÓN TRIAGE - OLLAMA
-    |--------------------------------------------------------------------------
-    
-    public function clasificarTriage(
-        Request $request,
-        OllamaService $ollama
-    )
-    {
-        $prompt = "
-        Actúa como un especialista en triage.
-
-        Edad: {$edad}
-        Sexo: {$sexo}
-        Temperatura: {$temperatura}
-        FC: {$fc}
-        FR: {$fr}
-        Saturación: {$saturacion}
-
-        Síntomas:
-        {$sintomas}
-
-        Clasifica al paciente en:
-        Rojo, Naranja, Amarillo, Verde o Azul.
-
-        Responde únicamente JSON:
-
-        {
-            \"clasificacion\": \"\",
-            \"justificacion\": \"\"
-        }
-        ";
-        $resultado = $ollama->analizar($prompt);
-
-        return response()->json($resultado);
-
-
-    }*/
         
     /*
     |--------------------------------------------------------------------------
@@ -57,7 +18,6 @@ class TriageController extends Controller
     */
     public function store(Request $request)
     {
-        // 1) El paciente no puede tener 2 triages activos a la vez
         $triageActivo = DB::table('triage')
             ->where('fk_paciente', $request->id_paciente)
             ->where('estado', 'Activo')
@@ -70,7 +30,6 @@ class TriageController extends Controller
             ], 409);
         }
 
-        // 2) Validación básica de la cabecera
         $validator = Validator::make($request->all(), [
             'id_paciente' => 'required|integer|exists:pacientes,id_paciente',
             'id_persona'  => 'required|integer|exists:persona,id_persona',
@@ -88,7 +47,6 @@ class TriageController extends Controller
             ], 422);
         }
 
-        // 3) Se identifica el método para saber en qué tabla de detalle escribir
         $metodoCodigo = DB::table('metodos_triage')
             ->where('id_metodo', $request->fk_metodo)
             ->value('codigo');
@@ -104,7 +62,6 @@ class TriageController extends Controller
 
             $idTriage = DB::transaction(function () use ($request, $metodoCodigo) {
 
-                // --- Cabecera (común a los 3 métodos) ---
                 $idTriage = DB::table('triage')->insertGetId([
                     'fk_paciente' => $request->id_paciente,
                     'fk_persona'  => $request->id_persona,
@@ -116,7 +73,6 @@ class TriageController extends Controller
                     'estado'      => 'Activo',
                 ]);
 
-                // --- Detalle específico según el método ---
                 switch ($metodoCodigo) {
 
                     case 'IGU_IMSS':
