@@ -25,6 +25,8 @@ body {
     min-height: 100vh;
 }
 
+
+
 /* =========================================
    CONTENIDO PRINCIPAL
 ========================================= */
@@ -528,4 +530,149 @@ td {
 
 .botones-modal .btn-ia:hover {
   background: linear-gradient(135deg, #6a20e0, #9333ea);
+}
+
+/* =========================================
+   TARJETAS DE PACIENTES
+========================================= */
+.pacientes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.paciente-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.paciente-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+}
+
+.paciente-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.paciente-avatar {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #e7edff;
+  color: #2d60ff;
+  font-size: 20px;
+}
+
+.paciente-nombre {
+  font-size: 16px;
+  color: #1f2937;
+}
+
+.paciente-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.paciente-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.icon-btn:hover {
+  background: #e2e8f0;
+}
+
+/* =========================================
+   BADGE DE PRIORIDAD
+========================================= */
+.badge-prioridad {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: white;
+}
+
+.badge-prioridad.rojo {
+  background: #ef4444;
+}
+
+.badge-prioridad.naranja {
+  background: #f97316;
+}
+
+.badge-prioridad.amarillo {
+  background: #eab308;
+  color: #1f2937;
+}
+
+.badge-prioridad.verde {
+  background: #22c55e;
+}
+
+.badge-prioridad.azul {
+  background: #3b82f6;
+}
+
+/* Responsive: 2 columnas en tablet, 1 en móvil */
+@media screen and (max-width: 1200px) {
+  .pacientes-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media screen and (max-width: 700px) {
+  .pacientes-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================
+   BOTÓN AGREGAR (azul, ícono blanco)
+========================================= */
+.btn-agregar {
+  background-color: #2d60ff;
+  color: white;
+  transition: background-color 0.2s ease;
+}
+
+.btn-agregar i {
+  color: white;
+}
+
+.btn-agregar:hover {
+  background-color: #1e46cc;
 }

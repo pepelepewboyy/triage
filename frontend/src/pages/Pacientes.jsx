@@ -194,8 +194,15 @@ function Pacientes() {
 
   const camposActivos = CAMPOS_POR_INSTITUCION[institucion] || [];
   const nivelesActivos = NIVELES_POR_METODO[institucion] || [];
-
   const activeIndex = INSTITUCIONES.findIndex((i) => i.key === institucion);
+
+  const iconoPorSexo = (sexo) =>
+    sexo === "Femenino" ? "fa-person-dress" : "fa-person";
+
+  const prioridadClase = (prioridad) => {
+    const p = (prioridad || "").toLowerCase();
+    return `badge-prioridad ${p}`;
+  };
 
   return (
     <>
@@ -231,78 +238,68 @@ function Pacientes() {
                 }}
               />
 
-              <Link to="/triaje" className="view">
+              <Link to="/triaje" className="view btn-agregar">
                 <i className="fa-solid fa-plus"></i>
               </Link>
             </div>
-            <div className="tab-con">
-              <table>
-                <thead>
-                  <tr>
-                    <th>ID Triage</th>
-                    <th>ID Paciente</th>
-                    <th>Nombre</th>
-                    <th>Edad</th>
-                    <th>Sexo</th>
-                    <th>Síntomas</th>
-                    <th>Método</th>
-                    <th>Prioridad</th>
-                    <th>Habitación</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
 
-                <tbody>
-                  {pacientesFiltrados.length === 0 ? (
-                    <tr>
-                      <td colSpan="9" style={{ textAlign: "center" }}>
-                        No hay pacientes
-                      </td>
-                    </tr>
-                  ) : (
-                    pacientesFiltrados.map((paciente) => (
-                      <tr key={paciente.id_triage}>
-                        <td>{paciente.id_triage}</td>
-                        <td>{paciente.id_paciente}</td>
-                        <td>{paciente.nombre_completo}</td>
-                        <td>{paciente.edad_estimada}</td>
-                        <td>{paciente.sexo}</td>
-                        <td>{paciente.sintomas}</td>
-                        <td>{paciente.metodo_codigo}</td>
-                        <td>{paciente.prioridad}</td>
-                        <td>{paciente.habitacion}</td>
-                        <td className="acciones">
-                          <div className="acciones-contenedor">
-                            <button
-                              className="view"
-                              onClick={() => editarPaciente(paciente.id_paciente)}
-                            >
-                              <i className="fa-solid fa-pencil" style={{ color: "#4116db" }} />
-                            </button>
+            {pacientesFiltrados.length === 0 ? (
+              <p style={{ textAlign: "center", padding: "30px 0", color: "#9ca3af" }}>
+                No hay pacientes
+              </p>
+            ) : (
+              <div className="pacientes-grid">
+                {pacientesFiltrados.map((paciente) => (
+                  <div
+                    className="paciente-card"
+                    key={paciente.id_triage}
+                    onClick={() => verPaciente(paciente.id_paciente)}
+                  >
+                    <div className="paciente-card-header">
+                      <div className="paciente-avatar">
+                        <i className={`fa-solid ${iconoPorSexo(paciente.sexo)}`}></i>
+                      </div>
+                      <span className={prioridadClase(paciente.prioridad)}>
+                        {paciente.prioridad}
+                      </span>
+                    </div>
 
-                            <button
-                              className="view"
-                              onClick={() => verPaciente(paciente.id_paciente)}
-                            >
-                              <i className="fa-solid fa-eye" style={{ color: "#0a8076" }} />
-                            </button>
+                    <h4 className="paciente-nombre">{paciente.nombre_completo}</h4>
 
-                            <button
-                              className="view"
-                              onClick={() =>
-                                mostrarEliminar(paciente.id_paciente, paciente.id_triage)
-                              }
-                            >
-                              <i className="fa-solid fa-trash" style={{ color: "#db1616" }} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    <div className="paciente-info">
+                      <span>
+                        <strong>Edad:</strong> {paciente.edad_estimada}
+                      </span>
+                      <span>
+                        <strong>Método:</strong> {paciente.metodo_codigo}
+                      </span>
+                    </div>
+
+                    <div className="paciente-card-footer">
+                      <button
+                        className="icon-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          editarPaciente(paciente.id_paciente);
+                        }}
+                      >
+                        <i className="fa-solid fa-pencil" style={{ color: "#4116db" }} />
+                      </button>
+
+                      <button
+                        className="icon-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          mostrarEliminar(paciente.id_paciente, paciente.id_triage);
+                        }}
+                      >
+                        <i className="fa-solid fa-trash" style={{ color: "#db1616" }} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -393,7 +390,6 @@ function Pacientes() {
 
               <div className="section-title">Signos vitales y triage</div>
 
-              {/* Selector de Institución / Método */}
               <div className="full">
                 <label>Institución / Método de evaluación</label>
 
@@ -420,7 +416,6 @@ function Pacientes() {
                 </div>
               </div>
 
-              {/* Campos dinámicos según institución */}
               {camposActivos.map((campo) => (
                 <div key={campo.key}>
                   <label>{campo.label}</label>
@@ -453,7 +448,6 @@ function Pacientes() {
                 </div>
               ))}
 
-              {/* Síntomas y Comentarios */}
               <div className="full">
                 <label>Síntomas e historia clínica</label>
                 <textarea
@@ -474,23 +468,17 @@ function Pacientes() {
                 />
               </div>
 
-              {/* Nivel de triage */}
               <div className="full">
                 <label>Nivel de triage</label>
                 <select
                   name="nivel_triage"
                   value={pacienteEditando.nivel_triage || ""}
                   onChange={handleChange}
-                  disabled={!institucion}
                 >
-                  <option value="">
-                    {institucion
-                      ? "Seleccione nivel"
-                      : "Primero selecciona una institución"}
-                  </option>
-                  {nivelesActivos.map((n) => (
-                    <option key={n.id} value={n.id}>
-                      {n.label}
+                  <option value="">Seleccione nivel</option>
+                  {nivelesActivos.map((nivel) => (
+                    <option key={nivel.value} value={nivel.value}>
+                      {nivel.label}
                     </option>
                   ))}
                 </select>

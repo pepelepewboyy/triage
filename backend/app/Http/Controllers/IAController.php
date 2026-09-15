@@ -73,7 +73,7 @@
                 }
 
                 No agregues texto antes ni después del json. No uses bloques
-                de código (```). Responde solo el objeto JSON.
+                de código (```). Responde solo el objeto JSON con una justificación de máximo 30 palabras.
                 ";
         }
         private function construirDatosPaciente(array $paciente): string{
