@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import logo from "../assets/estrella-vida.png";
+import logo from "../assets/logo.png";
 import "../css/Sidebar.css";
 
 function Sidebar({ isOpen, onClose }) {
@@ -40,7 +40,6 @@ function Sidebar({ isOpen, onClose }) {
         <div className="sidebar-layout">
           <div className="sidebar-header">
             <img src={logo} alt="TrIAge" className="sidebar-logo-img" />
-            <h5 className="sidebar-logo-text">TrIAge</h5>
           </div>
 
           <div className="sidebar-content">

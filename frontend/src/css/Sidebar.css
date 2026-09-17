@@ -23,22 +23,17 @@
 .sidebar-header {
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: center;
     padding: 20px;
     min-height: 90px;
 }
 
 .sidebar-logo-img {
-    width: 40px;
-    height: 40px;
+    width: 130px;
+    height: auto;
     flex-shrink: 0;
 }
 
-.sidebar-logo-text {
-    font-size: 18px;
-    white-space: nowrap;
-    color: #2d60ff;
-}
 
 .sidebar-content {
     flex-grow: 1;
