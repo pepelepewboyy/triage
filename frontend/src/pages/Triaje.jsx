@@ -12,6 +12,40 @@ import {
   construirDatosMetodo,
 } from "../constants/metodosTriage";
 
+// Toast (notificación en la esquina, no bloqueante) reutilizable para
+// avisos de la IA, en vez de un Swal.fire de ventana completa.
+const Toast = Swal.mixin({
+  toast: true,
+  position: "top-end",
+  showConfirmButton: false,
+  timerProgressBar: true,
+});
+
+// La IA responde con texto libre en nivel_triage/prioridad (ej. "Rojo",
+// "Nivel 2 - Naranja"), no con el id_nivel exacto de la BD. Se busca la
+// mejor coincidencia dentro de los niveles del método actual, primero por
+// el label completo y si no, por la palabra de color.
+function encontrarNivelIA(nivelesActivos, textoSugerido) {
+  if (!textoSugerido) return null;
+  const texto = textoSugerido.toLowerCase();
+
+  const porLabel = nivelesActivos.find(
+    (n) =>
+      texto.includes(n.label.toLowerCase()) ||
+      n.label.toLowerCase().includes(texto),
+  );
+  if (porLabel) return porLabel;
+
+  const colores = ["rojo", "naranja", "amarillo", "verde", "azul", "negro"];
+  const colorEncontrado = colores.find((c) => texto.includes(c));
+  if (!colorEncontrado) return null;
+
+  return (
+    nivelesActivos.find((n) => n.label.toLowerCase().includes(colorEncontrado)) ||
+    null
+  );
+}
+
 export default function Triage() {
   const [tipoPaciente, setTipoPaciente] = useState("existente");
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -42,10 +76,22 @@ export default function Triage() {
     comentario: "",
   });
 
+  // Se mantiene solo para deshabilitar el botón mientras se consulta la IA.
+  const [cargandoIA, setCargandoIA] = useState(false);
+
   const seleccionarInstitucion = (inst) => {
     setInstitucion(inst);
     setDatosMetodo({});
-    setTriage((prev) => ({ ...prev, nivel_triage: "" }));
+    // Se limpia todo el formulario de triage, no solo el nivel: los
+    // campos de un método (ej. Glasgow de ISSSTE) no tienen sentido si
+    // cambias a otro método (ej. START), y dejar síntomas/comentario a
+    // medio escribir de la institución anterior puede confundir al
+    // capturar el nuevo triage.
+    setTriage({
+      sintomas: "",
+      nivel_triage: "",
+      comentario: "",
+    });
   };
 
   const handleCampoChange = (key, value) => {
@@ -112,38 +158,73 @@ export default function Triage() {
       });
       return;
     }
-    try{
-      const response = await api.post("/ia/clasificar",{
-        tipo:PROTOCOLO_IA_POR_INSTITUCION[institucion],
-        sintomas:triage.sintomas,
-        comentario:triage.comentario,
-        ...datosMetodo
+    try {
+      setCargandoIA(true);
+
+      // Notificación tipo toast, no bloqueante, mientras se consulta.
+      // timer: false + Swal.showLoading() = se queda visible con spinner
+      // hasta que la cerramos manualmente con Swal.close().
+      Toast.fire({
+        icon: "info",
+        title: "Analizando síntomas...",
+        timer: false,
+        didOpen: () => Swal.showLoading(),
       });
+
+      const response = await api.post("/ia/clasificar", {
+        tipo: PROTOCOLO_IA_POR_INSTITUCION[institucion],
+        sintomas: triage.sintomas,
+        comentario: triage.comentario,
+        ...datosMetodo,
+      });
+
+      // IAController regresa response()->json($respuesta) donde $respuesta
+      // es el string crudo que contestó el modelo. Aunque el prompt le
+      // pide JSON puro, los modelos a veces igual envuelven la respuesta
+      // en ```json ... ``` — se limpia por si acaso antes de parsear.
       const textoLimpio = response.data.replace(/```json|```/g, "").trim();
       const resultado = JSON.parse(textoLimpio);
-      
-      await Swal.fire({
-        icon: "info",
-        title: "Sugerencia de la IA",
-        html: `
-          <p><b>Nivel sugerido:</b> ${resultado.nivel_triage || "N/A"}</p>
-          <p><b>Prioridad:</b> ${resultado.prioridad || "N/A"}</p>
-          <p style="text-align:left; margin-top:10px;">${resultado.justificacion || ""}</p>
-        `,
-        confirmButtonText: "Entendido",
+
+      Swal.close(); // cierra el toast de "Analizando síntomas..."
+
+      const nivelEncontrado =
+        encontrarNivelIA(nivelesActivos, resultado.nivel_triage) ||
+        encontrarNivelIA(nivelesActivos, resultado.prioridad);
+
+      const notaIA = resultado.justificacion
+        ? `[Sugerencia IA] ${resultado.justificacion}`
+        : "";
+
+      setTriage((prev) => ({
+        ...prev,
+        nivel_triage: nivelEncontrado
+          ? String(nivelEncontrado.id)
+          : prev.nivel_triage,
+        // Se agrega debajo de lo ya escrito, no lo reemplaza.
+        comentario: prev.comentario
+          ? `${prev.comentario}\n\n${notaIA}`
+          : notaIA,
+      }));
+
+      Toast.fire({
+        icon: nivelEncontrado ? "success" : "warning",
+        title: nivelEncontrado
+          ? `Nivel aplicado: ${nivelEncontrado.label}`
+          : "La IA respondió, pero no se pudo identificar el nivel automáticamente. Revisa el comentario.",
+        timer: nivelEncontrado ? 2500 : 4500,
       });
     } catch (error) {
+      Swal.close();
+
       const mensajeBackend =
         error.response?.data?.message ||
         "Error al consultar la IA (revisa que Ollama esté corriendo y que el .env tenga OLLAMA_URL/OLLAMA_MODEL/OBSIDIAN_PATH configurados)";
- 
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: mensajeBackend,
-      });
- 
+
+      Toast.fire({ icon: "error", title: mensajeBackend, timer: 4500 });
+
       console.error(error.response?.data || error);
+    } finally {
+      setCargandoIA(false);
     }
   };
 
@@ -507,9 +588,10 @@ export default function Triage() {
                 type="button"
                 className="btn btn-ia"
                 onClick={evaluarConIA}
+                disabled={cargandoIA}
               >
                 <i className="fa-solid fa-wand-magic-sparkles"></i>
-                IA Evaluación
+                {cargandoIA ? "Evaluando..." : "IA Evaluación"}
               </button>
             </div>
           </form>
