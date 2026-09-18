@@ -52,7 +52,7 @@ function Login() {
       });
 
       setTimeout(() => {
-        navigate("/dashboard");
+        navigate("/pacientes");
       }, 1000);
     } catch (error) {
         console.log("ERROR COMPLETO:", error);
@@ -79,7 +79,7 @@ function Login() {
     const usuario = localStorage.getItem("usuario");
 
     if (usuario) {
-      navigate("/dashboard");
+      navigate("/pacientes");
     }
   }, [navigate]);
 

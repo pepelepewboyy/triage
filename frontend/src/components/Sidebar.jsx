@@ -26,7 +26,6 @@ function Sidebar({ isOpen, onClose }) {
   const isActive = (path) => (location.pathname === path ? "active" : "");
 
   const menuItems = [
-    { path: "/dashboard", icon: "fa-house", label: "Dashboard" },
     { path: "/pacientes", icon: "fa-user", label: "Pacientes" },
     { path: "/triaje", icon: "fa-notes-medical", label: "Triage" },
     { path: "/configuraciones", icon: "fa-gear", label: "Configuración" },
